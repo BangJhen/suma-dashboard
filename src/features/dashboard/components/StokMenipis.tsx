@@ -1,7 +1,7 @@
 import React from 'react';
 import { Package } from 'lucide-react';
-import { PRODUCTS } from '../data/seed';
-import Badge from './Badge';
+import { PRODUCTS } from '../../../data/seed';
+import Badge from '../../../components/Badge';
 
 const LOW_STOCK = PRODUCTS.filter((p) => p.stock <= p.lowStockThreshold)
   .sort((a, b) => a.stock - b.stock);

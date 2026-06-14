@@ -1,7 +1,7 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, TooltipProps } from 'recharts';
-import { PAYMENT_BREAKDOWN } from '../data/seed';
-import { formatRupiah } from '../data/utils';
+import { PAYMENT_BREAKDOWN } from '../../../data/seed';
+import { formatRupiah } from '../../../utils/format';
 
 const TOTAL = PAYMENT_BREAKDOWN.reduce((s, p) => s + p.amount, 0);
 

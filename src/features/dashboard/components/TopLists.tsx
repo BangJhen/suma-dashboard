@@ -1,8 +1,8 @@
 import React from 'react';
 import { Scissors, ShoppingBag } from 'lucide-react';
-import { TOP_SERVICES, TOP_PRODUCTS } from '../data/seed';
-import { formatRupiah } from '../data/utils';
-import type { TopItem } from '../data/types';
+import { TOP_SERVICES, TOP_PRODUCTS } from '../../../data/seed';
+import { formatRupiah } from '../../../utils/format';
+import type { TopItem } from '../../../data/types';
 
 interface TopListProps {
   title: string;

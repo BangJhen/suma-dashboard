@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatRupiah, formatPct } from '../data/utils';
+import { formatRupiah, formatPct } from '../../../utils/format';
 
 interface KpiCardProps {
   label: string;

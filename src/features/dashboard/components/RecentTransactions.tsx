@@ -1,7 +1,7 @@
 import React from 'react';
-import { TRANSACTIONS } from '../data/seed';
-import { formatRupiah } from '../data/utils';
-import Badge from './Badge';
+import { TRANSACTIONS } from '../../../data/seed';
+import { formatRupiah } from '../../../utils/format';
+import Badge from '../../../components/Badge';
 
 const PREVIEW = TRANSACTIONS.slice(0, 10);
 

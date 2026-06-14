@@ -14,8 +14,8 @@ import PaymentChart from '../components/PaymentChart';
 import RecentTransactions from '../components/RecentTransactions';
 import StokMenipis from '../components/StokMenipis';
 import TopLists from '../components/TopLists';
-import { KPI_DATA } from '../data/seed';
-import type { Period } from '../data/types';
+import { KPI_DATA } from '../../../data/seed';
+import type { Period } from '../../../data/types';
 
 const PERIODS: Period[] = ['Hari Ini', 'Minggu Ini', 'Bulan Ini'];
 

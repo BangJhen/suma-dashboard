@@ -9,8 +9,8 @@ import {
   Tooltip,
   TooltipProps,
 } from 'recharts';
-import { CHART_DATA } from '../data/seed';
-import { formatRupiah, formatRupiahCompact } from '../data/utils';
+import { CHART_DATA } from '../../../data/seed';
+import { formatRupiah, formatRupiahCompact } from '../../../utils/format';
 
 function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
   if (!active || !payload?.length) return null;
