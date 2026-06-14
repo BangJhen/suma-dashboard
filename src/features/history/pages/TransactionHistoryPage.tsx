@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { formatRupiah } from '../../../utils/format';
 
+import ReportPreviewModal from '../components/ReportPreviewModal';
+
 type TransactionStatus = 'Paid' | 'Open' | 'Cancelled';
 type PaymentMethod = 'Cash' | 'QRIS' | 'Debit/Credit' | 'Transfer';
 type TransactionType = 'Layanan' | 'Produk' | 'Layanan + Produk';
@@ -73,6 +75,7 @@ export default function TransactionHistoryPage() {
   const [cashierFilter, setCashierFilter] = useState('Semua');
   const [statusFilter, setStatusFilter] = useState('Semua');
   const [sortOrder, setSortOrder] = useState('Terbaru');
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const filteredTransactions = useMemo(() => {
     const normalizedSearch = search.toLowerCase().trim();
@@ -112,7 +115,9 @@ export default function TransactionHistoryPage() {
               style={styles.searchInput}
             />
           </label>
-          <button style={styles.downloadBtn}><Download size={16} /> Unduh Laporan</button>
+          <button style={styles.downloadBtn} onClick={() => setIsReportOpen(true)}>
+            <Download size={16} /> Unduh Laporan
+          </button>
         </div>
       </header>
 
@@ -206,6 +211,13 @@ export default function TransactionHistoryPage() {
           <InsightsCard />
         </aside>
       </main>
+      
+      {isReportOpen && (
+        <ReportPreviewModal 
+          onClose={() => setIsReportOpen(false)} 
+          transactions={filteredTransactions} 
+        />
+      )}
     </div>
   );
 }
