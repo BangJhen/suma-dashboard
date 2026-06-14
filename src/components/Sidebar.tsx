@@ -35,8 +35,7 @@ export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
 
       {/* Logo */}
       <div style={styles.logoWrap}>
-        <div style={styles.logoText}>SUMA</div>
-        <div style={styles.logoSub}>BARBER</div>
+        <img src="/logo.png" alt="Suma Barber" style={styles.logoImage} />
       </div>
 
       {/* Navigation */}
@@ -94,24 +93,22 @@ const styles: Record<string, React.CSSProperties> = {
     pointerEvents: 'none',
   },
   logoWrap: {
-    padding: '20px 16px 16px',
+    padding: '24px 16px',
     borderBottom: '1px solid rgba(255,255,255,0.08)',
     position: 'relative',
     zIndex: 1,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 80,
   },
-  logoText: {
-    fontFamily: "'Playfair Display', serif",
-    color: '#C9A84C',
-    fontSize: 24,
-    fontWeight: 700,
-    letterSpacing: 3,
-  },
-  logoSub: {
-    color: 'rgba(255,255,255,0.35)',
-    fontSize: 9,
-    letterSpacing: 4,
-    textTransform: 'uppercase' as const,
-    marginTop: 1,
+  logoImage: {
+    maxWidth: '100%',
+    maxHeight: 50,
+    objectFit: 'contain',
+    // Karena sidebar warnanya hijau gelap, dan logo yang kamu berikan warnanya hitam,
+    // kita ubah warnanya jadi putih (atau emas) otomatis lewat CSS:
+    filter: 'brightness(0) invert(1)', 
   },
   nav: {
     flex: 1,

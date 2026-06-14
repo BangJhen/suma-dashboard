@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import DashboardPage from '../features/dashboard/pages/DashboardPage';
 import PlaceholderPage from '../pages/PlaceholderPage';
+import LoginPage from '../features/auth/pages/LoginPage';
 
 export const router = createBrowserRouter([
   {
@@ -36,6 +37,6 @@ export const router = createBrowserRouter([
   },
   {
     path: '/login',
-    element: <div style={{ padding: 40 }}><h1>Login Page</h1><p>Masih dalam pengembangan...</p></div>, // Kita bisa ubah ini nanti jadi AuthLayout
+    element: <LoginPage />,
   }
 ]);
