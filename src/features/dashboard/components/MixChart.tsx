@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { CHART_DATA } from '../../../data/seed';
 import { formatRupiah, formatRupiahCompact } from '../../../utils/format';
+import type { ChartDataPoint } from '../../../data/types';
 
 function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
   if (!active || !payload?.length) return null;
@@ -36,11 +37,16 @@ const tooltipStyle: React.CSSProperties = {
   boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
 };
 
-export default function MixChart() {
+interface MixChartProps {
+  data?: ChartDataPoint[];
+  title?: string;
+}
+
+export default function MixChart({ data = CHART_DATA, title = 'Layanan vs Produk (7 Hari Terakhir)' }: MixChartProps) {
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <div style={styles.title}>Layanan vs Produk (7 Hari Terakhir)</div>
+        <div style={styles.title}>{title}</div>
         <div style={styles.legend}>
           <span style={styles.legendItem}>
             <span style={{ ...styles.dot, background: '#1A3325' }} />
@@ -53,7 +59,7 @@ export default function MixChart() {
         </div>
       </div>
       <ResponsiveContainer width="100%" height={240}>
-        <BarChart data={CHART_DATA} margin={{ top: 4, right: 8, left: -10, bottom: 0 }} barSize={14}>
+        <BarChart data={data} margin={{ top: 4, right: 8, left: -10, bottom: 0 }} barSize={14}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
           <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#888' }} axisLine={false} tickLine={false} />
           <YAxis

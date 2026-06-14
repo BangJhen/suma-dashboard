@@ -25,7 +25,7 @@ const tooltipStyle: React.CSSProperties = {
   boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
 };
 
-export default function PaymentChart() {
+export default function PaymentChart({ onViewDetail }: { onViewDetail?: () => void }) {
   return (
     <div style={styles.card}>
       <div style={styles.title}>Ringkasan Pembayaran</div>
@@ -75,7 +75,7 @@ export default function PaymentChart() {
               </div>
             );
           })}
-          <button style={styles.viewLink}>Lihat detail pembayaran →</button>
+          <button type="button" onClick={onViewDetail} style={styles.viewLink}>Lihat detail pembayaran →</button>
         </div>
       </div>
     </div>

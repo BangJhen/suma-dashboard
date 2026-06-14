@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { CHART_DATA } from '../../../data/seed';
 import { formatRupiah, formatRupiahCompact } from '../../../utils/format';
+import type { ChartDataPoint } from '../../../data/types';
 
 function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
   if (!active || !payload?.length) return null;
@@ -31,17 +32,22 @@ const tooltipStyle: React.CSSProperties = {
   boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
 };
 
-const totalOmzet = CHART_DATA.reduce((s, d) => s + d.omzet, 0);
+interface OmzetChartProps {
+  data?: ChartDataPoint[];
+  title?: string;
+}
 
-export default function OmzetChart() {
+export default function OmzetChart({ data = CHART_DATA, title = 'Omzet (7 Hari Terakhir)' }: OmzetChartProps) {
+  const totalOmzet = data.reduce((s, d) => s + d.omzet, 0);
+
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <div style={styles.title}>Omzet (7 Hari Terakhir)</div>
+        <div style={styles.title}>{title}</div>
         <div style={styles.total}>Total: {formatRupiah(totalOmzet)}</div>
       </div>
       <ResponsiveContainer width="100%" height={240}>
-        <LineChart data={CHART_DATA} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
+        <LineChart data={data} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
           <XAxis
             dataKey="date"

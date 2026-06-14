@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TRANSACTIONS } from '../../../data/seed';
 import { formatRupiah } from '../../../utils/format';
 import Badge from '../../../components/Badge';
@@ -6,11 +7,13 @@ import Badge from '../../../components/Badge';
 const PREVIEW = TRANSACTIONS.slice(0, 10);
 
 export default function RecentTransactions() {
+  const navigate = useNavigate();
+
   return (
     <div style={styles.card}>
       <div style={styles.header}>
         <div style={styles.title}>Transaksi Terbaru</div>
-        <button style={styles.seeAll}>Lihat Semua</button>
+        <button type="button" onClick={() => navigate('/history')} style={styles.seeAll}>Lihat Semua</button>
       </div>
 
       <div style={{ overflowX: 'auto', flex: 1 }}>

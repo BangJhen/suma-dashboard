@@ -10,9 +10,10 @@ interface TopListProps {
   icon: React.ReactNode;
   iconBg: string;
   iconColor: string;
+  onSeeAll?: (title: string, items: TopItem[]) => void;
 }
 
-function TopList({ title, items, icon, iconBg, iconColor }: TopListProps) {
+function TopList({ title, items, icon, iconBg, iconColor, onSeeAll }: TopListProps) {
   return (
     <div style={styles.card}>
       <div style={styles.header}>
@@ -22,7 +23,7 @@ function TopList({ title, items, icon, iconBg, iconColor }: TopListProps) {
           </div>
           <div style={styles.title}>{title}</div>
         </div>
-        <button style={styles.seeAll}>Lihat Semua</button>
+        <button type="button" onClick={() => onSeeAll?.(title, items)} style={styles.seeAll}>Lihat Semua</button>
       </div>
 
       {items.map((item) => (
@@ -37,7 +38,7 @@ function TopList({ title, items, icon, iconBg, iconColor }: TopListProps) {
   );
 }
 
-export default function TopLists() {
+export default function TopLists({ onSeeAll }: { onSeeAll?: (title: string, items: TopItem[]) => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <TopList
@@ -46,6 +47,7 @@ export default function TopLists() {
         icon={<Scissors size={14} />}
         iconBg="#E8F5E9"
         iconColor="#2E7D32"
+        onSeeAll={onSeeAll}
       />
       <TopList
         title="Top Produk"
@@ -53,6 +55,7 @@ export default function TopLists() {
         icon={<ShoppingBag size={14} />}
         iconBg="#FFF8E1"
         iconColor="#C9A84C"
+        onSeeAll={onSeeAll}
       />
     </div>
   );

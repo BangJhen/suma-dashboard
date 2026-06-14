@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Package } from 'lucide-react';
 import { PRODUCTS } from '../../../data/seed';
 import Badge from '../../../components/Badge';
@@ -7,11 +8,13 @@ const LOW_STOCK = PRODUCTS.filter((p) => p.stock <= p.lowStockThreshold)
   .sort((a, b) => a.stock - b.stock);
 
 export default function StokMenipis() {
+  const navigate = useNavigate();
+
   return (
     <div style={styles.card}>
       <div style={styles.header}>
         <div style={styles.title}>Stok Menipis</div>
-        <button style={styles.seeAll}>Lihat Semua</button>
+        <button type="button" onClick={() => navigate('/products')} style={styles.seeAll}>Lihat Semua</button>
       </div>
 
       {LOW_STOCK.map((p) => {
