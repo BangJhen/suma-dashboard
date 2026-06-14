@@ -65,12 +65,44 @@ const PAYMENT_METHODS: { key: PaymentMethod; icon: React.ReactNode }[] = [
   { key: 'Transfer', icon: <Landmark size={14} /> },
 ];
 
+type PaymentModal = 'Debit/Credit' | 'Transfer' | null;
+
+interface CardPaymentDetails {
+  cardType: 'Debit' | 'Credit';
+  bank: string;
+  approvalCode: string;
+  note: string;
+}
+
+interface TransferPaymentDetails {
+  bank: string;
+  accountNumber: string;
+  accountName: string;
+  referenceNumber: string;
+  note: string;
+}
+
 export default function PosPage() {
   const [tab, setTab] = useState<PosCategory>('Layanan');
   const [filter, setFilter] = useState('Semua');
   const [query, setQuery] = useState('');
   const [discount, setDiscount] = useState(0);
   const [payment, setPayment] = useState<PaymentMethod>('QRIS');
+  const [paymentModal, setPaymentModal] = useState<PaymentModal>(null);
+  const [cashReceived, setCashReceived] = useState(250000);
+  const [cardDetails, setCardDetails] = useState<CardPaymentDetails>({
+    cardType: 'Debit',
+    bank: 'BCA',
+    approvalCode: '',
+    note: '',
+  });
+  const [transferDetails, setTransferDetails] = useState<TransferPaymentDetails>({
+    bank: 'Mandiri',
+    accountNumber: '1234567890',
+    accountName: 'Suma Barbershop',
+    referenceNumber: '',
+    note: '',
+  });
   const [cart, setCart] = useState<CartItem[]>([
     { ...POS_ITEMS[0], qty: 1 },
     { ...POS_ITEMS[6], qty: 1 },
@@ -103,6 +135,14 @@ export default function PosPage() {
   };
 
   const removeItem = (id: string) => setCart((items) => items.filter((item) => item.id !== id));
+
+  const handleSelectPayment = (method: PaymentMethod) => {
+    setPayment(method);
+    if (method === 'Debit/Credit' || method === 'Transfer') setPaymentModal(method);
+  };
+
+  const cardSummary = `${cardDetails.cardType} ${cardDetails.bank}${cardDetails.approvalCode ? ` • Ref: ${cardDetails.approvalCode}` : ''}`;
+  const transferSummary = `${transferDetails.bank} • ${transferDetails.accountName}${transferDetails.referenceNumber ? ` • Ref: ${transferDetails.referenceNumber}` : ''}`;
 
   return (
     <div style={styles.page}>
@@ -246,9 +286,23 @@ export default function PosPage() {
           <h3 style={styles.paymentTitle}>Metode Pembayaran</h3>
           <div style={styles.paymentGrid}>
             {PAYMENT_METHODS.map((method) => (
-              <button key={method.key} onClick={() => setPayment(method.key)} style={{ ...styles.paymentBtn, ...(payment === method.key ? styles.paymentActive : {}) }}>{method.icon}{method.key}</button>
+              <button key={method.key} onClick={() => handleSelectPayment(method.key)} style={{ ...styles.paymentBtn, ...(payment === method.key ? styles.paymentActive : {}) }}>{method.icon}{method.key}</button>
             ))}
           </div>
+
+          {payment === 'Cash' && (
+            <div style={styles.cashBox}>
+              <div>
+                <strong>Cash</strong>
+                <p>Input uang diterima untuk menghitung kembalian pelanggan.</p>
+              </div>
+              <div style={styles.cashInputWrap}>
+                <span>Rp</span>
+                <input value={cashReceived || ''} onChange={(e) => setCashReceived(Number(e.target.value.replace(/\D/g, '')))} style={styles.cashInput} placeholder="0" />
+              </div>
+              <div style={styles.changeRow}><span>Kembalian</span><strong>{formatRupiah(Math.max(cashReceived - total, 0))}</strong></div>
+            </div>
+          )}
 
           {payment === 'QRIS' && (
             <div style={styles.qrisBox}>
@@ -261,10 +315,99 @@ export default function PosPage() {
             </div>
           )}
 
+          {payment === 'Debit/Credit' && (
+            <div style={styles.paymentSummaryBox}>
+              <CreditCard size={20} color="#1A3325" />
+              <div style={{ flex: 1 }}>
+                <strong>Debit/Credit</strong>
+                <p>{cardSummary}</p>
+              </div>
+              <button onClick={() => setPaymentModal('Debit/Credit')} style={styles.editPaymentBtn}>Detail</button>
+            </div>
+          )}
+
+          {payment === 'Transfer' && (
+            <div style={styles.paymentSummaryBox}>
+              <Landmark size={20} color="#1A3325" />
+              <div style={{ flex: 1 }}>
+                <strong>Transfer</strong>
+                <p>{transferSummary}</p>
+              </div>
+              <button onClick={() => setPaymentModal('Transfer')} style={styles.editPaymentBtn}>Detail</button>
+            </div>
+          )}
+
           <button style={styles.payButton}>Selesaikan Pembayaran</button>
           <button style={styles.saveButton}><Save size={15} /> Simpan sebagai Open</button>
         </aside>
       </div>
+
+      {paymentModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalCard}>
+            <div style={styles.modalHeader}>
+              <div>
+                <h2 style={styles.modalTitle}>{paymentModal === 'Debit/Credit' ? 'Detail Debit/Credit' : 'Detail Transfer'}</h2>
+                <p style={styles.modalSubtitle}>Lengkapi informasi pembayaran sebelum transaksi diselesaikan.</p>
+              </div>
+              <button onClick={() => setPaymentModal(null)} style={styles.modalClose}><X size={18} /></button>
+            </div>
+
+            {paymentModal === 'Debit/Credit' ? (
+              <div style={styles.modalForm}>
+                <label style={styles.modalLabel}>Tipe Kartu</label>
+                <select value={cardDetails.cardType} onChange={(e) => setCardDetails({ ...cardDetails, cardType: e.target.value as 'Debit' | 'Credit' })} style={styles.modalInput}>
+                  <option value="Debit">Debit</option>
+                  <option value="Credit">Credit</option>
+                </select>
+
+                <label style={styles.modalLabel}>Bank / Issuer</label>
+                <select value={cardDetails.bank} onChange={(e) => setCardDetails({ ...cardDetails, bank: e.target.value })} style={styles.modalInput}>
+                  <option>BCA</option>
+                  <option>Mandiri</option>
+                  <option>BRI</option>
+                  <option>BNI</option>
+                  <option>CIMB Niaga</option>
+                </select>
+
+                <label style={styles.modalLabel}>Nomor Approval / Reference</label>
+                <input value={cardDetails.approvalCode} onChange={(e) => setCardDetails({ ...cardDetails, approvalCode: e.target.value })} style={styles.modalInput} placeholder="Contoh: 829102" />
+
+                <label style={styles.modalLabel}>Catatan Opsional</label>
+                <textarea value={cardDetails.note} onChange={(e) => setCardDetails({ ...cardDetails, note: e.target.value })} style={styles.modalTextarea} placeholder="Contoh: kartu customer tidak perlu struk bank" />
+              </div>
+            ) : (
+              <div style={styles.modalForm}>
+                <label style={styles.modalLabel}>Bank Tujuan</label>
+                <select value={transferDetails.bank} onChange={(e) => setTransferDetails({ ...transferDetails, bank: e.target.value })} style={styles.modalInput}>
+                  <option>Mandiri</option>
+                  <option>BCA</option>
+                  <option>BRI</option>
+                  <option>BNI</option>
+                  <option>BSI</option>
+                </select>
+
+                <label style={styles.modalLabel}>Nomor Rekening</label>
+                <input value={transferDetails.accountNumber} onChange={(e) => setTransferDetails({ ...transferDetails, accountNumber: e.target.value })} style={styles.modalInput} placeholder="Nomor rekening tujuan" />
+
+                <label style={styles.modalLabel}>Nama Penerima</label>
+                <input value={transferDetails.accountName} onChange={(e) => setTransferDetails({ ...transferDetails, accountName: e.target.value })} style={styles.modalInput} placeholder="Nama penerima" />
+
+                <label style={styles.modalLabel}>Nomor Referensi Transfer</label>
+                <input value={transferDetails.referenceNumber} onChange={(e) => setTransferDetails({ ...transferDetails, referenceNumber: e.target.value })} style={styles.modalInput} placeholder="Contoh: TRF-9821" />
+
+                <label style={styles.modalLabel}>Catatan Opsional</label>
+                <textarea value={transferDetails.note} onChange={(e) => setTransferDetails({ ...transferDetails, note: e.target.value })} style={styles.modalTextarea} placeholder="Contoh: transfer dari rekening atas nama pelanggan" />
+              </div>
+            )}
+
+            <div style={styles.modalActions}>
+              <button onClick={() => setPaymentModal(null)} style={styles.modalCancel}>Batal</button>
+              <button onClick={() => setPaymentModal(null)} style={styles.modalSave}>Simpan Detail</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -278,9 +421,9 @@ function SummaryLine({ label, value }: { label: string; value: string }) {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { padding: '18px 24px 24px', background: '#F8F4EE', minHeight: '100%', color: '#1A3325' },
+  page: { padding: '18px 24px 24px', background: 'transparent', minHeight: '100%', color: '#1A3325' },
   headerRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, marginBottom: 18 },
-  title: { margin: 0, fontSize: 26, fontWeight: 800, color: '#123526', fontFamily: "'Playfair Display', serif" },
+  title: { margin: 0, fontSize: 26, fontWeight: 800, color: '#123526', fontFamily: 'var(--font-heading)' },
   subtitle: { margin: '6px 0 0', fontSize: 13, color: '#6E6A64' },
   customerActions: { display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 },
   searchCustomer: { width: 290, height: 38, background: '#fff', border: '1px solid #E2D7C7', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px' },
@@ -343,11 +486,30 @@ const styles: Record<string, React.CSSProperties> = {
   summaryLine: { display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#333', marginBottom: 7 },
   grandTotal: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FBF3E8', color: '#1A3325', padding: '8px 6px', fontSize: 14, fontWeight: 800 },
   paymentTitle: { fontSize: 12, margin: '0 0 8px', color: '#333' },
-  paymentGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 7, marginBottom: 12 },
-  paymentBtn: { height: 36, border: '1px solid #E7DCCB', borderRadius: 7, background: '#fff', color: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', fontSize: 11, fontWeight: 700 },
+  paymentGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginBottom: 12 },
+  paymentBtn: { minHeight: 42, border: '1px solid #E7DCCB', borderRadius: 9, background: '#fff', color: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: 'pointer', fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', minWidth: 0 },
   paymentActive: { background: '#0F3F31', color: '#fff', borderColor: '#0F3F31' },
+  cashBox: { display: 'grid', gridTemplateColumns: '1fr 150px', gap: 12, alignItems: 'center', background: '#FFF9EE', border: '1px solid #EBD9BE', borderRadius: 9, padding: 12, marginBottom: 10 },
+  cashInputWrap: { height: 38, border: '1px solid #E7DCCB', borderRadius: 7, display: 'flex', alignItems: 'center', padding: '0 9px', gap: 6, color: '#888', background: '#fff' },
+  cashInput: { flex: 1, minWidth: 0, border: 'none', outline: 'none', textAlign: 'right', fontWeight: 800, fontFamily: 'inherit' },
+  changeRow: { gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #F0E4D6', paddingTop: 8, fontSize: 12, color: '#1A3325' },
   qrisBox: { display: 'flex', alignItems: 'center', gap: 12, background: '#EFF8EF', border: '1px solid #CFE7D3', borderRadius: 9, padding: 12, marginBottom: 10 },
   qrButton: { border: '1px solid #0F3F31', color: '#0F3F31', background: '#fff', borderRadius: 7, padding: '8px 10px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' },
+  paymentSummaryBox: { display: 'flex', alignItems: 'center', gap: 12, background: '#EFF8EF', border: '1px solid #CFE7D3', borderRadius: 9, padding: 12, marginBottom: 10 },
+  editPaymentBtn: { border: '1px solid #0F3F31', color: '#0F3F31', background: '#fff', borderRadius: 7, padding: '8px 12px', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' },
   payButton: { width: '100%', height: 44, border: 'none', borderRadius: 8, background: '#0F3F31', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', marginBottom: 8 },
   saveButton: { width: '100%', height: 40, border: '1px solid #C75B3A', borderRadius: 8, background: '#fff', color: '#C75B3A', fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(15, 31, 24, 0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 24 },
+  modalCard: { width: '100%', maxWidth: 480, background: '#fff', borderRadius: 16, border: '1px solid #E7DCCB', boxShadow: '0 24px 80px rgba(15,31,24,0.28)', padding: 22 },
+  modalHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 18 },
+  modalTitle: { margin: 0, fontSize: 20, color: '#1A3325', fontFamily: 'var(--font-heading)' },
+  modalSubtitle: { margin: '5px 0 0', fontSize: 12, color: '#777', lineHeight: 1.5 },
+  modalClose: { width: 34, height: 34, borderRadius: 999, background: '#F8F4EE', color: '#1A3325', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
+  modalForm: { display: 'flex', flexDirection: 'column', gap: 8 },
+  modalLabel: { fontSize: 12, fontWeight: 800, color: '#333', marginTop: 6 },
+  modalInput: { height: 42, border: '1px solid #E7DCCB', borderRadius: 8, padding: '0 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', color: '#1A3325', background: '#fff' },
+  modalTextarea: { minHeight: 76, border: '1px solid #E7DCCB', borderRadius: 8, padding: 12, fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'inherit', color: '#1A3325' },
+  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 },
+  modalCancel: { height: 40, padding: '0 16px', borderRadius: 8, border: '1px solid #E7DCCB', color: '#555', background: '#fff', fontWeight: 800, cursor: 'pointer' },
+  modalSave: { height: 40, padding: '0 18px', borderRadius: 8, border: 'none', color: '#fff', background: '#0F3F31', fontWeight: 800, cursor: 'pointer' },
 };

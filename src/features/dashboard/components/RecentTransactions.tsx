@@ -13,7 +13,7 @@ export default function RecentTransactions() {
         <button style={styles.seeAll}>Lihat Semua</button>
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
+      <div style={{ overflowX: 'auto', flex: 1 }}>
         <table style={styles.table}>
           <thead>
             <tr>
@@ -50,6 +50,9 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #E8E2D8',
     borderRadius: 10,
     padding: '14px',
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1,
   },
   header: {
     display: 'flex',
@@ -75,13 +78,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
     color: '#888',
     fontWeight: 500,
-    padding: '6px 8px',
+    padding: '10px 8px',
     textAlign: 'left' as const,
     borderBottom: '1px solid #F0EBE1',
     whiteSpace: 'nowrap',
   },
   td: {
-    padding: '8px',
+    padding: '12px 8px',
     color: '#333',
     borderBottom: '1px solid #F8F4EE',
     whiteSpace: 'nowrap',

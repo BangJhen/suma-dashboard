@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
@@ -7,6 +7,7 @@ import type { NavPage } from '../data/types';
 export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Map route path to NavPage type for Sidebar
   let activePage: NavPage = 'Dashboard';
@@ -27,22 +28,18 @@ export default function MainLayout() {
     }
   };
 
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
   return (
     <div style={styles.app}>
-      <Sidebar activePage={activePage} onNavigate={handleNavigate} />
+      <Sidebar activePage={activePage} onNavigate={handleNavigate} isOpen={isSidebarOpen} />
 
       <div style={styles.main}>
-        <Topbar />
+        <Topbar isSidebarOpen={isSidebarOpen} onToggleSidebar={toggleSidebar} />
 
         <main style={styles.content}>
           <Outlet />
         </main>
-
-        <footer style={styles.footer}>
-          <span style={styles.footerScissor}>✂</span>
-          Suma Barbershop POS • Dashboard Admin
-          <span style={styles.footerScissor}>✂</span>
-        </footer>
       </div>
     </div>
   );
@@ -53,7 +50,10 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     height: '100vh',
     overflow: 'hidden',
-    background: '#F5F0E8',
+    backgroundImage: 'url("/background-suma-web-light.png")',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
   },
   main: {
     flex: 1,
@@ -66,23 +66,5 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     overflowY: 'auto',
     overflowX: 'hidden',
-  },
-  footer: {
-    background: '#fff',
-    borderTop: '1px solid #E8E2D8',
-    textAlign: 'center',
-    padding: '8px 16px',
-    fontSize: 10,
-    color: '#aaa',
-    letterSpacing: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    flexShrink: 0,
-  },
-  footerScissor: {
-    color: '#C9A84C',
-    fontSize: 12,
   },
 };

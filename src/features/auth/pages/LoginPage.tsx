@@ -26,11 +26,8 @@ export default function LoginPage() {
     <div style={styles.container}>
       {/* KIRI - Branding */}
       <div style={styles.leftPanel}>
-        <div style={styles.patternTop} />
-        <div style={styles.patternBottom} />
-        
         <div style={styles.brandContent}>
-          <img src="/logo.png" alt="Suma Barber" style={styles.logo} />
+          <img src="/Logo%20Suma%20Barbershop.png" alt="Suma Barbershop" style={styles.logo} />
           
           <div style={styles.divider}>
             <span style={styles.dividerDot} />
@@ -43,6 +40,9 @@ export default function LoginPage() {
             Sistem manajemen kasir & admin<br />
             untuk barbershop profesional
           </p>
+          {/* <p style={styles.brandDesc}>
+            Hadir dengan layanan premium dan pengalaman grooming tak terlupakan. Aplikasi kasir terintegrasi ini dirancang khusus untuk kemudahan operasional dan pencatatan transaksi harian bisnis Anda.
+          </p> */}
         </div>
       </div>
 
@@ -125,15 +125,6 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
-
-        {/* Page Footer */}
-        <div style={styles.pageFooter}>
-          <span style={styles.footerDeco}>✧</span>
-          <span>Suma Barbershop POS</span>
-          <span style={styles.footerDot}>•</span>
-          <span>Dashboard Admin</span>
-          <span style={styles.footerDeco}>✧</span>
-        </div>
       </div>
     </div>
   );
@@ -143,13 +134,19 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
     minHeight: '100vh',
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: 'var(--font-body)',
+    backgroundImage: 'url("/background-suma-web-light.png")',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
   },
   
   // --- PANEL KIRI ---
   leftPanel: {
     flex: 1,
-    background: '#1A3325', // Heritage Green
+    backgroundImage: 'linear-gradient(to bottom, rgba(15,63,49,0.7), rgba(7,42,32,0.95)), url("/suma-barbershop-image.PNG")',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -157,32 +154,20 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'relative',
     overflow: 'hidden',
   },
-  patternTop: {
-    position: 'absolute',
-    top: -100,
-    left: -100,
-    width: 300,
-    height: 300,
-    background: 'radial-gradient(circle, rgba(201,168,76,0.05) 0%, rgba(26,51,37,0) 70%)',
-  },
-  patternBottom: {
-    position: 'absolute',
-    bottom: -150,
-    right: -100,
-    width: 400,
-    height: 400,
-    background: 'radial-gradient(circle, rgba(201,168,76,0.08) 0%, rgba(26,51,37,0) 70%)',
-  },
   brandContent: {
     textAlign: 'center',
     zIndex: 1,
     padding: 40,
+    maxWidth: 500,
   },
   logo: {
-    height: 80,
+    width: '80%',
+    maxWidth: 340,
+    height: 'auto',
     marginBottom: 40,
-    // Mengubah logo hitam menjadi warna emas (Gold #C9A84C) menggunakan filter
-    filter: 'brightness(0) saturate(100%) invert(70%) sepia(40%) saturate(700%) hue-rotate(5deg) brightness(95%) contrast(85%)',
+    objectFit: 'contain',
+    margin: '0 auto 40px',
+    display: 'block',
   },
   divider: {
     display: 'flex',
@@ -199,20 +184,27 @@ const styles: Record<string, React.CSSProperties> = {
   },
   brandTitle: {
     color: '#C9A84C',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 600,
     marginBottom: 12,
   },
   brandSubtitle: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 15,
+    lineHeight: 1.6,
+    marginBottom: 16,
+  },
+  brandDesc: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 1.6,
   },
 
   // --- PANEL KANAN ---
   rightPanel: {
     flex: 1.2,
-    background: '#F8F5F0',
+    background: 'rgba(248, 245, 240, 0.7)',
+    backdropFilter: 'blur(6px)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -251,7 +243,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 24,
     fontWeight: 700,
     marginBottom: 8,
-    fontFamily: "'Playfair Display', serif",
+    fontFamily: 'var(--font-heading)',
   },
   cardSubtitle: {
     color: '#666',
@@ -359,22 +351,4 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#666',
     lineHeight: 1.5,
   },
-
-  // Page Footer
-  pageFooter: {
-    position: 'absolute',
-    bottom: 30,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    fontSize: 12,
-    color: '#888',
-  },
-  footerDeco: {
-    color: '#C9A84C',
-  },
-  footerDot: {
-    fontSize: 10,
-    opacity: 0.5,
-  }
 };

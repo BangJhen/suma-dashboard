@@ -100,7 +100,9 @@ export default function DashboardPage() {
             <OmzetChart />
             <MixChart />
           </div>
-          <RecentTransactions />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <RecentTransactions />
+          </div>
         </div>
 
         {/* Kolom Kanan: PaymentChart, Stok Menipis, Top Layanan & Produk */}
@@ -132,7 +134,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 20,
     fontWeight: 700,
     color: '#1A3325',
-    fontFamily: "'Playfair Display', serif",
+    fontFamily: 'var(--font-heading)',
   },
   pageSub: {
     fontSize: 12,
@@ -183,7 +185,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'grid',
     gridTemplateColumns: '2fr 1fr',
     gap: 10,
-    alignItems: 'start',
+    alignItems: 'stretch',
   },
   leftColumn: {
     display: 'flex',

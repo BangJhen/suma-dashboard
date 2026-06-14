@@ -56,7 +56,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     color: '#1A3325',
     marginBottom: 8,
-    fontFamily: "'Playfair Display', serif",
+    fontFamily: 'var(--font-heading)',
   },
   desc: { fontSize: 13, color: '#888', lineHeight: 1.6, marginBottom: 20 },
   badge: {
