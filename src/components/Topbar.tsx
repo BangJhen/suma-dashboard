@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronDown, Home, LogOut, PanelLeftClose, PanelLeftOpen, User } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, ChevronDown, Home, LogOut, PanelLeftClose, PanelLeftOpen, User, X } from 'lucide-react';
 
 const BRANCHES = [
   'Suma Barbershop - Cabang Utama',
@@ -13,8 +15,25 @@ interface TopbarProps {
 }
 
 export default function Topbar({ isSidebarOpen, onToggleSidebar }: TopbarProps) {
+  const navigate = useNavigate();
   const [branch, setBranch] = useState(BRANCHES[0]);
   const [openMenu, setOpenMenu] = useState<'branch' | 'owner' | null>(null);
+  const [pendingBranch, setPendingBranch] = useState<string | null>(null);
+
+  const handleBranchClick = (item: string) => {
+    setOpenMenu(null);
+    if (item === branch) return;
+    setPendingBranch(item);
+  };
+
+  const handleConfirmBranch = () => {
+    setPendingBranch(null);
+    navigate('/login');
+  };
+
+  const handleCancelBranch = () => {
+    setPendingBranch(null);
+  };
 
   const toggleMenu = (menu: 'branch' | 'owner') => {
     setOpenMenu((current) => (current === menu ? null : menu));
@@ -45,10 +64,7 @@ export default function Topbar({ isSidebarOpen, onToggleSidebar }: TopbarProps) 
                 <button
                   key={item}
                   type="button"
-                  onClick={() => {
-                    setBranch(item);
-                    setOpenMenu(null);
-                  }}
+                  onClick={() => handleBranchClick(item)}
                   style={{ ...styles.dropdownItem, ...(item === branch ? styles.dropdownItemActive : {}) }}
                 >
                   <Home size={14} />
@@ -78,12 +94,33 @@ export default function Topbar({ isSidebarOpen, onToggleSidebar }: TopbarProps) 
                   <div style={{ fontSize: 11, color: '#888' }}>owner@suma.com</div>
                 </div>
               </div>
-              <button type="button" style={styles.dropdownItem}><User size={14} /> Profile</button>
-              <button type="button" style={{ ...styles.dropdownItem, color: '#C75B3A' }}><LogOut size={14} /> Logout</button>
+              <button type="button" onClick={() => { setOpenMenu(null); navigate('/profile'); }} style={styles.dropdownItem}><User size={14} /> Profile</button>
+              <button type="button" onClick={() => { setOpenMenu(null); navigate('/login'); }} style={{ ...styles.dropdownItem, color: '#C75B3A' }}><LogOut size={14} /> Logout</button>
             </div>
           )}
         </div>
       </div>
+
+      {pendingBranch && createPortal(
+        <div style={modalStyles.overlay}>
+          <div style={modalStyles.card}>
+            <div style={modalStyles.header}>
+              <AlertTriangle size={22} color="#C75B3A" />
+              <h3 style={modalStyles.title}>Pindah Cabang</h3>
+              <button onClick={handleCancelBranch} style={modalStyles.closeBtn}><X size={16} /></button>
+            </div>
+            <p style={modalStyles.body}>
+              Anda akan berpindah ke <strong>{pendingBranch}</strong>. Untuk melanjutkan, Anda harus login ulang terlebih dahulu.
+            </p>
+            <p style={modalStyles.confirm}>Yakin ingin pindah cabang?</p>
+            <div style={modalStyles.actions}>
+              <button onClick={handleCancelBranch} style={modalStyles.cancelBtn}>Batal</button>
+              <button onClick={handleConfirmBranch} style={modalStyles.confirmBtn}>Ya, Pindah Cabang</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </header>
   );
 }
@@ -166,4 +203,96 @@ const styles: Record<string, React.CSSProperties> = {
   },
   dropdownItemActive: { background: '#F5EDD6', color: '#1A3325', fontWeight: 700 },
   ownerInfo: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 10px 12px', borderBottom: '1px solid #F0E8DC', marginBottom: 4 },
+};
+
+const modalStyles: Record<string, React.CSSProperties> = {
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 9999,
+    background: 'rgba(15,31,24,0.45)',
+    backdropFilter: 'blur(4px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 420,
+    background: '#fff',
+    borderRadius: 16,
+    border: '1px solid #E7DCCB',
+    padding: 24,
+    boxShadow: '0 24px 80px rgba(15,31,24,0.28)',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  title: {
+    margin: 0,
+    flex: 1,
+    fontSize: 18,
+    fontWeight: 800,
+    color: '#10281F',
+    fontFamily: 'var(--font-heading)',
+  },
+  closeBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 999,
+    background: '#F8F4EE',
+    border: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    color: '#10281F',
+    flexShrink: 0,
+  },
+  body: {
+    margin: 0,
+    fontSize: 13.5,
+    color: '#4E4944',
+    lineHeight: 1.6,
+  },
+  confirm: {
+    margin: '12px 0 0',
+    fontSize: 13.5,
+    color: '#10281F',
+    fontWeight: 700,
+  },
+  actions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 20,
+    paddingTop: 16,
+    borderTop: '1px solid #F0E6D8',
+  },
+  cancelBtn: {
+    height: 40,
+    padding: '0 16px',
+    border: '1px solid #E7DCCB',
+    borderRadius: 8,
+    background: '#fff',
+    color: '#555',
+    fontWeight: 800,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+  },
+  confirmBtn: {
+    height: 40,
+    padding: '0 18px',
+    border: 'none',
+    borderRadius: 8,
+    background: '#C75B3A',
+    color: '#fff',
+    fontWeight: 800,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+  },
 };

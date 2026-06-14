@@ -3,7 +3,6 @@ import {
   BarChart3,
   Calendar,
   ChevronDown,
-  Download,
   FileSpreadsheet,
   FileText,
   Plus,
@@ -15,6 +14,8 @@ import {
   X,
 } from 'lucide-react';
 import { formatRupiah } from '../../../utils/format';
+import { TRANSACTIONS as REPORT_TRANSACTIONS } from '../../history/data/transactions';
+import ReportExportModal from '../components/ReportExportModal';
 
 type ReportTab = 'Laba & Rugi' | 'Komisi Kapster' | 'Pengeluaran Operasional';
 type Period = 'Hari Ini' | 'Minggu Ini' | 'Bulan Ini' | 'Custom';
@@ -59,6 +60,8 @@ export default function ReportPage() {
   const [period, setPeriod] = useState<Period>('Bulan Ini');
   const [expenses, setExpenses] = useState<Expense[]>(INITIAL_EXPENSES);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isExcelExporting, setIsExcelExporting] = useState(false);
   const [expenseForm, setExpenseForm] = useState<Omit<Expense, 'id'>>({
     date: '14 Jun 2026',
     category: 'Maintenance',
@@ -89,6 +92,28 @@ export default function ReportPage() {
     setIsExpenseModalOpen(false);
   };
 
+  const handleExportExcel = async () => {
+    setIsExcelExporting(true);
+
+    try {
+      await new Promise((resolve) => window.setTimeout(resolve, 80));
+      const { downloadCompleteFinancialReportExcel } = await import('../utils/generateFinancialReportWorkbook');
+
+      await downloadCompleteFinancialReportExcel({
+        period,
+        financials,
+        commissions: COMMISSIONS,
+        expenses,
+        transactions: REPORT_TRANSACTIONS,
+      });
+    } catch (error) {
+      console.error('Gagal export Excel laporan lengkap', error);
+      window.alert('Gagal membuat file Excel. Silakan coba lagi.');
+    } finally {
+      setIsExcelExporting(false);
+    }
+  };
+
   return (
     <div style={styles.page}>
       <div style={styles.headerRow}>
@@ -104,8 +129,15 @@ export default function ReportPage() {
             </select>
             <ChevronDown size={14} color="#888" />
           </div>
-          <button style={styles.exportBtn}><FileText size={15} /> Export PDF</button>
-          <button style={styles.exportBtn}><FileSpreadsheet size={15} /> Export Excel</button>
+          <button onClick={() => setIsReportModalOpen(true)} style={styles.exportBtn}><FileText size={15} /> Export PDF</button>
+          <button
+            onClick={handleExportExcel}
+            disabled={isExcelExporting}
+            aria-busy={isExcelExporting}
+            style={{ ...styles.exportBtn, ...(isExcelExporting ? styles.exportBtnDisabled : {}) }}
+          >
+            <FileSpreadsheet size={15} /> {isExcelExporting ? 'Menyiapkan...' : 'Export Excel'}
+          </button>
         </div>
       </div>
 
@@ -159,6 +191,17 @@ export default function ReportPage() {
             </div>
           </form>
         </div>
+      )}
+
+      {isReportModalOpen && (
+        <ReportExportModal
+          onClose={() => setIsReportModalOpen(false)}
+          period={period}
+          activeTab={activeTab}
+          financials={financials}
+          commissions={COMMISSIONS}
+          expenses={expenses}
+        />
       )}
     </div>
   );
@@ -256,6 +299,7 @@ const styles: Record<string, React.CSSProperties> = {
   periodWrap: { height: 44, minWidth: 150, background: '#fff', border: '1px solid #E6D8C6', borderRadius: 9, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px' },
   periodSelect: { border: 'none', outline: 'none', background: 'transparent', fontWeight: 800, color: '#10281F', fontFamily: 'inherit', appearance: 'none', flex: 1 },
   exportBtn: { height: 44, border: '1px solid #E6D8C6', borderRadius: 9, background: '#fff', color: '#10281F', display: 'flex', alignItems: 'center', gap: 7, padding: '0 14px', fontWeight: 800, cursor: 'pointer' },
+  exportBtnDisabled: { cursor: 'not-allowed', opacity: 0.65 },
   kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 16 },
   kpiCard: { minHeight: 104, background: 'rgba(255,255,255,0.9)', border: '1px solid #E6D8C6', borderRadius: 12, padding: 16, display: 'flex', alignItems: 'center', gap: 13, boxShadow: '0 12px 34px rgba(85,58,25,0.04)', minWidth: 0 },
   kpiIcon: { width: 48, height: 48, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },

@@ -5,8 +5,9 @@ import PosPage from '../features/pos/pages/PosPage';
 import ProductsPage from '../features/products/pages/ProductsPage';
 import ReportPage from '../features/reports/pages/ReportPage';
 import TransactionHistoryPage from '../features/history/pages/TransactionHistoryPage';
-import PlaceholderPage from '../pages/PlaceholderPage';
 import LoginPage from '../features/auth/pages/LoginPage';
+import ProfilePage from '../features/profile/pages/ProfilePage';
+import SettingsPage from '../features/settings/pages/SettingsPage';
 
 export const router = createBrowserRouter([
   {
@@ -35,7 +36,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'settings',
-        element: <PlaceholderPage page="Pengaturan" />,
+        element: <SettingsPage />,
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />,
       },
     ],
   },
