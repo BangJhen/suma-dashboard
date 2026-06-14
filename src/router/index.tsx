@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import DashboardPage from '../features/dashboard/pages/DashboardPage';
 import PosPage from '../features/pos/pages/PosPage';
+import ProductsPage from '../features/products/pages/ProductsPage';
 import PlaceholderPage from '../pages/PlaceholderPage';
 import LoginPage from '../features/auth/pages/LoginPage';
 
@@ -20,7 +21,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'products',
-        element: <PlaceholderPage page="Produk & Stok" />,
+        element: <ProductsPage />,
       },
       {
         path: 'history',
