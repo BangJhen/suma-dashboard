@@ -5,8 +5,8 @@ export default function Topbar() {
   return (
     <header style={styles.topbar}>
       <div style={styles.brand}>
-        <Scissors size={18} color="#C9A84C" />
-        <span style={styles.brandName}>Suma Barbershop</span>
+        <img src="/logo.png" alt="Suma Barber" style={{ height: 20, objectFit: 'contain' }} />
+        <span style={styles.brandName}>Suma Barber</span>
       </div>
 
       <div style={styles.controls}>
