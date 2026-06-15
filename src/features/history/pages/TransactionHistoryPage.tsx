@@ -54,13 +54,11 @@ export default function TransactionHistoryPage() {
   const [detailTx, setDetailTx] = useState<typeof TRANSACTIONS[0] | null>(null);
   const [isPaymentDetailOpen, setIsPaymentDetailOpen] = useState(false);
 
-  // Date range state
+  // Date range state (default lebar untuk mencakup data dummy)
   const today = new Date();
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   const fmtDisplay = (d: Date) => d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-  const [startDate, setStartDate] = useState(fmt(sevenDaysAgo));
+  const [startDate, setStartDate] = useState('2025-01-01');
   const [endDate, setEndDate] = useState(fmt(today));
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const datePickerRef = React.useRef<HTMLDivElement>(null);
@@ -117,7 +115,7 @@ export default function TransactionHistoryPage() {
         if (sortOrder === 'Terlama') return a.id.localeCompare(b.id);
         return b.id.localeCompare(a.id);
       });
-  }, [activeTab, cashierFilter, paymentFilter, search, sortOrder, statusFilter, typeFilter]);
+  }, [activeTab, cashierFilter, paymentFilter, search, sortOrder, statusFilter, typeFilter, startDate, endDate]);
 
   // Pagination
   const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE) || 1;
