@@ -32,7 +32,9 @@ export default function MainLayout() {
 
   return (
     <div style={styles.app}>
-      <Sidebar activePage={activePage} onNavigate={handleNavigate} isOpen={isSidebarOpen} />
+      <div style={{ ...styles.sidebarWrap, width: isSidebarOpen ? 224 : 0, minWidth: isSidebarOpen ? 224 : 0 }}>
+        <Sidebar activePage={activePage} onNavigate={handleNavigate} isOpen={isSidebarOpen} />
+      </div>
 
       <div style={styles.main}>
         <Topbar isSidebarOpen={isSidebarOpen} onToggleSidebar={toggleSidebar} />
@@ -54,6 +56,11 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundAttachment: 'fixed',
+  },
+  sidebarWrap: {
+    overflow: 'hidden',
+    transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+    flexShrink: 0,
   },
   main: {
     flex: 1,

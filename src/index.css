@@ -50,6 +50,15 @@ button {
   background: none;
 }
 
+.sidebar-nav-item:focus {
+  outline: none;
+}
+
+.sidebar-nav-item:focus-visible {
+  outline: 2px solid rgba(244, 217, 155, 0.72);
+  outline-offset: 2px;
+}
+
 a {
   text-decoration: none;
   color: inherit;

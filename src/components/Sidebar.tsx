@@ -29,10 +29,8 @@ const NAV_ITEMS: { label: NavPage; icon: React.ReactNode }[] = [
 export default function Sidebar({ activePage, onNavigate, isOpen }: SidebarProps) {
   const { timeStr, dateStr } = useServerClock();
 
-  if (!isOpen) return null;
-
   return (
-    <aside style={styles.sidebar}>
+    <aside style={{ ...styles.sidebar, transform: `translateX(${isOpen ? 0 : -224}px)` }}>
       <div style={styles.logoWrap}>
         <img src="/Logo%20Suma%20Barbershop.png" alt="Suma Barbershop" style={styles.logoImage} />
       </div>
@@ -43,6 +41,9 @@ export default function Sidebar({ activePage, onNavigate, isOpen }: SidebarProps
           return (
             <button
               key={label}
+              type="button"
+              className="sidebar-nav-item"
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => onNavigate(label)}
               style={{ ...styles.navItem, ...(isActive ? styles.navItemActive : {}) }}
               aria-current={isActive ? 'page' : undefined}
@@ -70,14 +71,15 @@ const styles: Record<string, React.CSSProperties> = {
   sidebar: {
     width: 224,
     minWidth: 224,
+    height: '100vh',
     backgroundImage: 'url("/sidebar-background.png")',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     display: 'flex',
     flexDirection: 'column',
-    position: 'relative',
     overflow: 'hidden',
     borderRight: '1px solid rgba(201,168,76,0.16)',
+    transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
   },
   logoWrap: {
     padding: '34px 28px 30px',
@@ -108,18 +110,21 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 12,
     padding: '0 16px',
     background: 'transparent',
-    border: '1px solid transparent',
+    border: 'none',
     borderRadius: 10,
     cursor: 'pointer',
     position: 'relative',
     transition: 'all 0.18s ease',
     textAlign: 'left' as const,
     fontFamily: 'inherit',
+    outline: 'none',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    WebkitTapHighlightColor: 'transparent',
   },
   navItemActive: {
-    background: 'rgba(255,255,255,0.12)',
-    borderColor: 'rgba(201,168,76,0.18)',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 24px rgba(0,0,0,0.12)',
+    background: 'linear-gradient(90deg, rgba(244,217,155,0.24) 0%, rgba(255,255,255,0.12) 16%, rgba(255,255,255,0.08) 100%)',
+    boxShadow: 'none',
   },
   navIcon: { color: 'rgba(255,255,255,0.78)', display: 'flex', alignItems: 'center', flexShrink: 0 },
   navIconActive: { color: '#F4D99B' },
