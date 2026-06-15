@@ -9,7 +9,6 @@ import {
   Clock3,
   Download,
   Eye,
-  MoreVertical,
   PackageCheck,
   ReceiptText,
   Scissors,
@@ -51,18 +50,32 @@ export default function TransactionHistoryPage() {
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
 
-  // Dropdown & Modal state
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  // Modal state
   const [detailTx, setDetailTx] = useState<typeof TRANSACTIONS[0] | null>(null);
   const [isPaymentDetailOpen, setIsPaymentDetailOpen] = useState(false);
 
-  // Click outside -> tutup dropdown
+  // Date range state
+  const today = new Date();
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const fmtDisplay = (d: Date) => d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  const [startDate, setStartDate] = useState(fmt(sevenDaysAgo));
+  const [endDate, setEndDate] = useState(fmt(today));
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const datePickerRef = React.useRef<HTMLDivElement>(null);
+
+  // Click outside -> tutup datepicker
   useEffect(() => {
-    if (!menuOpenId) return;
-    const close = () => setMenuOpenId(null);
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
-  }, [menuOpenId]);
+    if (!isDatePickerOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
+        setIsDatePickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isDatePickerOpen]);
 
   // Dynamic KPI
   const kpiData = useMemo(() => {
@@ -74,10 +87,21 @@ export default function TransactionHistoryPage() {
     return { total, paid, open, cancelled, omzet };
   }, []);
 
+  // Konversi "14 Jun 2025" ke Date
+  const parseDateStr = (d: string) => {
+    const months: Record<string, number> = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+    const [day, month, year] = d.split(' ');
+    return new Date(Number(year), months[month] ?? 0, Number(day));
+  };
+
   const filteredTransactions = useMemo(() => {
     const normalizedSearch = search.toLowerCase().trim();
+    const sd = new Date(startDate + 'T00:00:00');
+    const ed = new Date(endDate + 'T23:59:59');
     return [...TRANSACTIONS]
       .filter((transaction) => {
+        const txDate = parseDateStr(transaction.date);
+        const matchesDate = txDate >= sd && txDate <= ed;
         const matchesSearch = [transaction.id, transaction.customer, transaction.item]
           .some((value) => value.toLowerCase().includes(normalizedSearch));
         const matchesTab = activeTab === 'Semua' || transaction.status === activeTab;
@@ -85,7 +109,7 @@ export default function TransactionHistoryPage() {
         const matchesType = typeFilter === 'Semua' || transaction.type === typeFilter;
         const matchesCashier = cashierFilter === 'Semua' || transaction.cashier === cashierFilter;
         const matchesStatus = statusFilter === 'Semua' || transaction.status === statusFilter;
-        return matchesSearch && matchesTab && matchesPayment && matchesType && matchesCashier && matchesStatus;
+        return matchesDate && matchesSearch && matchesTab && matchesPayment && matchesType && matchesCashier && matchesStatus;
       })
       .sort((a, b) => {
         if (sortOrder === 'Total Tertinggi') return b.total - a.total;
@@ -163,7 +187,19 @@ export default function TransactionHistoryPage() {
           <FilterSelect value={paymentFilter} onChange={setPaymentFilter} options={PAYMENT_FILTERS} />
           <FilterSelect value={typeFilter} onChange={setTypeFilter} options={TYPE_FILTERS} />
           <FilterSelect value={cashierFilter} onChange={setCashierFilter} options={CASHIER_FILTERS} />
-          <button style={styles.dateBtn}><Calendar size={15} color="#C75B3A" /> 8 Jun 2025 - 14 Jun 2025</button>
+          <div ref={datePickerRef} style={{ position: 'relative', flexShrink: 0 }}>
+            <button onClick={() => setIsDatePickerOpen(!isDatePickerOpen)} style={styles.dateBtn}>
+              <Calendar size={15} color="#C75B3A" /> {fmtDisplay(new Date(startDate + 'T00:00:00'))} - {fmtDisplay(new Date(endDate + 'T00:00:00'))}
+            </button>
+            {isDatePickerOpen && (
+              <div style={styles.datePickerDropdown}>
+                <label style={styles.datePickerLabel}>Dari Tanggal</label>
+                <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setPage(1); }} style={styles.datePickerInput} />
+                <label style={{ ...styles.datePickerLabel, marginTop: 8 }}>Sampai Tanggal</label>
+                <input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setPage(1); }} style={styles.datePickerInput} />
+              </div>
+            )}
+          </div>
           <div style={styles.sortWrap}>
             <ArrowUpDown size={14} color="#C75B3A" />
             <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} style={styles.selectInput}>
@@ -210,31 +246,9 @@ export default function TransactionHistoryPage() {
                     <td style={styles.tdTotal}>{formatRupiah(transaction.total)}</td>
                     <td style={styles.td}><StatusBadge status={transaction.status} /></td>
                     <td style={styles.tdAction}>
-                      <div style={{ position: 'relative', display: 'inline-flex' }}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === transaction.id ? null : transaction.id); }}
-                          style={styles.actionBtn}
-                          aria-label={`Aksi ${transaction.id}`}
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                        {menuOpenId === transaction.id && (
-                          <div style={styles.dropdownMenu}>
-                            <button
-                              style={styles.dropdownItem}
-                              onClick={() => { setMenuOpenId(null); setDetailTx(transaction); }}
-                            >
-                              <Eye size={14} /> Lihat Detail
-                            </button>
-                            <button
-                              style={styles.dropdownItem}
-                              onClick={() => { setMenuOpenId(null); window.print(); }}
-                            >
-                              <Download size={14} /> Cetak Ulang
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <button onClick={() => setDetailTx(transaction)} style={styles.detailBtn}>
+                        <Eye size={14} /> Detail
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -265,7 +279,7 @@ export default function TransactionHistoryPage() {
 
         <aside style={styles.asideColumn}>
           <PaymentSummaryCard onViewDetail={() => setIsPaymentDetailOpen(true)} />
-          <RecentTransactionsCard onSeeAll={() => { setActiveTab('Semua'); setPage(1); }} />
+          <RecentTransactionsCard />
           <InsightsCard />
         </aside>
       </main>
@@ -413,13 +427,12 @@ function PaymentSummaryCard({ onViewDetail }: { onViewDetail: () => void }) {
   );
 }
 
-function RecentTransactionsCard({ onSeeAll }: { onSeeAll: () => void }) {
+function RecentTransactionsCard() {
   const latest = TRANSACTIONS.slice(0, 4);
   return (
     <section style={styles.sideCard}>
       <div style={styles.sideHeader}>
         <h3 style={styles.sideTitle}>Transaksi Terbaru</h3>
-        <button onClick={onSeeAll} style={styles.seeAllBtn}>Lihat Semua</button>
       </div>
       <div style={styles.latestList}>
         {latest.map((transaction) => (
@@ -550,16 +563,26 @@ const styles: Record<string, React.CSSProperties> = {
   detailRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F0E6D8' },
   detailLabel: { fontSize: 12, color: '#6E6A64', fontWeight: 600 },
   detailValue: { fontSize: 13, color: '#10281F', textAlign: 'right', maxWidth: '60%' },
-  dropdownMenu: {
-    position: 'absolute', right: 0, top: '100%', zIndex: 50,
-    background: '#fff', border: '1px solid #E6D8C6', borderRadius: 8,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 150, padding: 4,
-    marginTop: 4,
+
+  // Detail button
+  detailBtn: {
+    height: 32, padding: '0 12px', border: '1px solid #E6D8C6', borderRadius: 6,
+    background: '#fff', color: '#C75B3A', fontWeight: 800, fontSize: 11,
+    display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer',
   } as React.CSSProperties,
-  dropdownItem: {
-    display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 14px',
-    border: 'none', background: 'transparent', textAlign: 'left',
-    fontSize: 12, fontWeight: 600, color: '#333', borderRadius: 5,
-    cursor: 'pointer',
+
+  // Date picker
+  datePickerDropdown: {
+    position: 'absolute', top: '100%', right: 0, zIndex: 50, marginTop: 6,
+    background: '#fff', border: '1px solid #E6D8C6', borderRadius: 10,
+    boxShadow: '0 12px 40px rgba(15,31,24,0.18)', padding: 16, minWidth: 220,
+  } as React.CSSProperties,
+  datePickerLabel: {
+    display: 'block', fontSize: 11, fontWeight: 700, color: '#6E6A64', marginBottom: 5,
+  },
+  datePickerInput: {
+    width: '100%', height: 38, border: '1px solid #E6D8C6', borderRadius: 7,
+    padding: '0 10px', fontSize: 13, fontFamily: 'inherit', color: '#10281F',
+    background: '#fff', boxSizing: 'border-box',
   } as React.CSSProperties,
 };
