@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   ArrowUpDown,
   Calendar,
@@ -18,6 +18,7 @@ import {
   Sparkles,
   Timer,
   WalletCards,
+  X,
   XCircle,
 } from 'lucide-react';
 import { formatRupiah } from '../../../utils/format';
@@ -47,6 +48,31 @@ export default function TransactionHistoryPage() {
   const [statusFilter, setStatusFilter] = useState('Semua');
   const [sortOrder, setSortOrder] = useState('Terbaru');
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
+
+  // Dropdown & Modal state
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [detailTx, setDetailTx] = useState<typeof TRANSACTIONS[0] | null>(null);
+  const [isPaymentDetailOpen, setIsPaymentDetailOpen] = useState(false);
+
+  // Click outside -> tutup dropdown
+  useEffect(() => {
+    if (!menuOpenId) return;
+    const close = () => setMenuOpenId(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [menuOpenId]);
+
+  // Dynamic KPI
+  const kpiData = useMemo(() => {
+    const total = TRANSACTIONS.length;
+    const paid = TRANSACTIONS.filter(t => t.status === 'Paid').length;
+    const open = TRANSACTIONS.filter(t => t.status === 'Open').length;
+    const cancelled = TRANSACTIONS.filter(t => t.status === 'Cancelled').length;
+    const omzet = TRANSACTIONS.filter(t => t.status === 'Paid').reduce((s, t) => s + t.total, 0);
+    return { total, paid, open, cancelled, omzet };
+  }, []);
 
   const filteredTransactions = useMemo(() => {
     const normalizedSearch = search.toLowerCase().trim();
@@ -68,6 +94,31 @@ export default function TransactionHistoryPage() {
         return b.id.localeCompare(a.id);
       });
   }, [activeTab, cashierFilter, paymentFilter, search, sortOrder, statusFilter, typeFilter]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE) || 1;
+  const safePage = Math.max(1, Math.min(page, totalPages));
+  const pagedTransactions = filteredTransactions.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+
+  const generatePageNumbers = () => {
+    const pages: (number | '...')[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (safePage > 3) pages.push('...');
+      const start = Math.max(2, safePage - 1);
+      const end = Math.min(totalPages - 1, safePage + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (safePage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+  const pageNumbers = generatePageNumbers();
+
+  const startItem = (safePage - 1) * ITEMS_PER_PAGE + 1;
+  const endItem = Math.min(safePage * ITEMS_PER_PAGE, filteredTransactions.length);
 
   return (
     <div style={styles.page}>
@@ -93,11 +144,11 @@ export default function TransactionHistoryPage() {
       </header>
 
       <section style={styles.kpiGrid}>
-        <KpiCard icon={<ShoppingBag size={20} />} label="Total Transaksi" value="268" note="Semua transaksi" tone="green" />
-        <KpiCard icon={<CheckCircle2 size={20} />} label="Transaksi Paid" value="241" note="89.9% dari total" tone="green" />
-        <KpiCard icon={<Clock3 size={20} />} label="Transaksi Open" value="12" note="4.5% dari total" tone="gold" />
-        <KpiCard icon={<XCircle size={20} />} label="Transaksi Cancelled" value="15" note="5.6% dari total" tone="rust" />
-        <KpiCard icon={<strong style={{ fontSize: 17 }}>Rp</strong>} label="Total Omzet" value="Rp 28.450.000" note="Periode terpilih" tone="green" />
+        <KpiCard icon={<ShoppingBag size={20} />} label="Total Transaksi" value={String(kpiData.total)} note="Semua transaksi" tone="green" />
+        <KpiCard icon={<CheckCircle2 size={20} />} label="Transaksi Paid" value={String(kpiData.paid)} note={`${kpiData.total > 0 ? Math.round(kpiData.paid / kpiData.total * 100) : 0}% dari total`} tone="green" />
+        <KpiCard icon={<Clock3 size={20} />} label="Transaksi Open" value={String(kpiData.open)} note={`${kpiData.total > 0 ? Math.round(kpiData.open / kpiData.total * 100) : 0}% dari total`} tone="gold" />
+        <KpiCard icon={<XCircle size={20} />} label="Transaksi Cancelled" value={String(kpiData.cancelled)} note={`${kpiData.total > 0 ? Math.round(kpiData.cancelled / kpiData.total * 100) : 0}% dari total`} tone="rust" />
+        <KpiCard icon={<strong style={{ fontSize: 17 }}>Rp</strong>} label="Total Omzet" value={formatRupiah(kpiData.omzet)} note="Periode terpilih" tone="green" />
       </section>
 
       <section style={styles.toolbar}>
@@ -158,27 +209,63 @@ export default function TransactionHistoryPage() {
                     <td style={styles.td}><span style={styles.paymentPill}>{transaction.payment}</span></td>
                     <td style={styles.tdTotal}>{formatRupiah(transaction.total)}</td>
                     <td style={styles.td}><StatusBadge status={transaction.status} /></td>
-                    <td style={styles.tdAction}><button style={styles.actionBtn} aria-label={`Aksi ${transaction.id}`}><MoreVertical size={16} /></button></td>
+                    <td style={styles.tdAction}>
+                      <div style={{ position: 'relative', display: 'inline-flex' }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === transaction.id ? null : transaction.id); }}
+                          style={styles.actionBtn}
+                          aria-label={`Aksi ${transaction.id}`}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        {menuOpenId === transaction.id && (
+                          <div style={styles.dropdownMenu}>
+                            <button
+                              style={styles.dropdownItem}
+                              onClick={() => { setMenuOpenId(null); setDetailTx(transaction); }}
+                            >
+                              <Eye size={14} /> Lihat Detail
+                            </button>
+                            <button
+                              style={styles.dropdownItem}
+                              onClick={() => { setMenuOpenId(null); window.print(); }}
+                            >
+                              <Download size={14} /> Cetak Ulang
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <footer style={styles.paginationRow}>
-            <span style={styles.paginationText}>Menampilkan 1 dari 268 transaksi</span>
+            <span style={styles.paginationText}>Menampilkan {startItem}-{endItem} dari {filteredTransactions.length} transaksi</span>
             <div style={styles.paginationButtons}>
-              <button style={styles.pageButton}><ChevronLeft size={15} /></button>
-              {[1, 2, 3].map((pageNumber) => <button key={pageNumber} style={{ ...styles.pageButton, ...(pageNumber === 1 ? styles.pageActive : {}) }}>{pageNumber}</button>)}
-              <span style={styles.dots}>...</span>
-              <button style={styles.pageButton}>18</button>
-              <button style={styles.pageButton}><ChevronRight size={15} /></button>
+              <button onClick={() => setPage(safePage - 1)} disabled={safePage <= 1} style={{ ...styles.pageButton, opacity: safePage <= 1 ? 0.4 : 1 }}>
+                <ChevronLeft size={15} />
+              </button>
+              {pageNumbers.map((p, i) =>
+                p === '...' ? (
+                  <span key={`dots-${i}`} style={styles.dots}>...</span>
+                ) : (
+                  <button key={p} onClick={() => setPage(p)} style={{ ...styles.pageButton, ...(p === safePage ? styles.pageActive : {}) }}>
+                    {p}
+                  </button>
+                )
+              )}
+              <button onClick={() => setPage(safePage + 1)} disabled={safePage >= totalPages} style={{ ...styles.pageButton, opacity: safePage >= totalPages ? 0.4 : 1 }}>
+                <ChevronRight size={15} />
+              </button>
             </div>
           </footer>
         </section>
 
         <aside style={styles.asideColumn}>
-          <PaymentSummaryCard />
-          <RecentTransactionsCard />
+          <PaymentSummaryCard onViewDetail={() => setIsPaymentDetailOpen(true)} />
+          <RecentTransactionsCard onSeeAll={() => { setActiveTab('Semua'); setPage(1); }} />
           <InsightsCard />
         </aside>
       </main>
@@ -189,6 +276,78 @@ export default function TransactionHistoryPage() {
           transactions={filteredTransactions} 
         />
       )}
+
+      {/* Modal Detail Transaksi */}
+      {detailTx && (
+        <div style={styles.modalOverlay}>
+          <div style={{ ...styles.modalCard, maxWidth: 480 }}>
+            <div style={styles.modalHeader}>
+              <div>
+                <h2 style={styles.modalTitle}>Detail Transaksi</h2>
+                <p style={styles.modalSubtitle}>{detailTx.id}</p>
+              </div>
+              <button onClick={() => setDetailTx(null)} style={styles.modalClose}><X size={18} /></button>
+            </div>
+            <div style={styles.detailGrid}>
+              <DetailRow label="Tanggal" value={`${detailTx.date} ${detailTx.time}`} />
+              <DetailRow label="Pelanggan" value={detailTx.customer} />
+              <DetailRow label="Item" value={detailTx.item} />
+              <DetailRow label="Metode Pembayaran" value={detailTx.payment} />
+              <DetailRow label="Status" value={detailTx.status} />
+              <DetailRow label="Kasir" value={detailTx.cashier} />
+              <DetailRow label="Total" value={formatRupiah(detailTx.total)} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detail Pembayaran */}
+      {isPaymentDetailOpen && (
+        <div style={styles.modalOverlay}>
+          <div style={{ ...styles.modalCard, maxWidth: 420 }}>
+            <div style={styles.modalHeader}>
+              <div>
+                <h2 style={styles.modalTitle}>Detail Pembayaran</h2>
+                <p style={styles.modalSubtitle}>Ringkasan semua metode pembayaran</p>
+              </div>
+              <button onClick={() => setIsPaymentDetailOpen(false)} style={styles.modalClose}><X size={18} /></button>
+            </div>
+            <div style={{ padding: '8px 0' }}>
+              {PAYMENT_SUMMARY.map(item => (
+                <div key={item.label} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '12px 0', borderBottom: '1px solid #F0E6D8',
+                }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <strong style={{ fontSize: 13, color: '#10281F' }}>{item.label}</strong>
+                    <p style={{ margin: '3px 0 0', fontSize: 12, color: '#6E6A64' }}>{item.pct}% dari total pembayaran</p>
+                  </div>
+                  <strong style={{ fontSize: 13, color: '#10281F' }}>{formatRupiah(item.value)}</strong>
+                </div>
+              ))}
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '14px 0 4px', borderTop: '2px solid #10281F', marginTop: 8,
+              }}>
+                <strong style={{ fontSize: 14, color: '#10281F' }}>Total</strong>
+                <strong style={{ fontSize: 16, color: '#10281F' }}>
+                  {formatRupiah(PAYMENT_SUMMARY.reduce((s, i) => s + i.value, 0))}
+                </strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={styles.detailRow}>
+      <span style={styles.detailLabel}>{label}</span>
+      <strong style={styles.detailValue}>{value}</strong>
     </div>
   );
 }
@@ -223,7 +382,7 @@ function StatusBadge({ status }: { status: TransactionStatus }) {
   return <span style={{ ...styles.statusBadge, ...statusStyle }}>{status}</span>;
 }
 
-function PaymentSummaryCard() {
+function PaymentSummaryCard({ onViewDetail }: { onViewDetail: () => void }) {
   return (
     <section style={styles.sideCard}>
       <div style={styles.sideHeader}>
@@ -249,18 +408,18 @@ function PaymentSummaryCard() {
           ))}
         </div>
       </div>
-      <button style={styles.linkButton}>Lihat detail pembayaran -&gt;</button>
+      <button onClick={onViewDetail} style={styles.linkButton}>Lihat detail pembayaran -&gt;</button>
     </section>
   );
 }
 
-function RecentTransactionsCard() {
+function RecentTransactionsCard({ onSeeAll }: { onSeeAll: () => void }) {
   const latest = TRANSACTIONS.slice(0, 4);
   return (
     <section style={styles.sideCard}>
       <div style={styles.sideHeader}>
         <h3 style={styles.sideTitle}>Transaksi Terbaru</h3>
-        <button style={styles.seeAllBtn}>Lihat Semua</button>
+        <button onClick={onSeeAll} style={styles.seeAllBtn}>Lihat Semua</button>
       </div>
       <div style={styles.latestList}>
         {latest.map((transaction) => (
@@ -379,4 +538,28 @@ const styles: Record<string, React.CSSProperties> = {
   insightRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: '1px solid #F0E6D8' },
   insightLabel: { display: 'flex', alignItems: 'center', gap: 7, color: '#6E6A64', fontSize: 12, minWidth: 0 },
   insightValue: { color: '#10281F', fontSize: 12.5, textAlign: 'right', maxWidth: 135 },
+
+  // Modal & Dropdown Styles
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(15, 31, 24, 0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 24 },
+  modalCard: { width: '100%', maxWidth: 500, background: '#fff', borderRadius: 16, border: '1px solid #E7DCCB', boxShadow: '0 24px 80px rgba(15,31,24,0.28)', padding: 26 },
+  modalHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 18 },
+  modalTitle: { margin: 0, fontSize: 20, color: '#1A3325', fontFamily: 'var(--font-heading)' },
+  modalSubtitle: { margin: '5px 0 0', fontSize: 13, color: '#777', lineHeight: 1.5 },
+  modalClose: { width: 34, height: 34, borderRadius: 999, background: '#F8F4EE', color: '#1A3325', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none' },
+  detailGrid: { display: 'flex', flexDirection: 'column', gap: 2 },
+  detailRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F0E6D8' },
+  detailLabel: { fontSize: 12, color: '#6E6A64', fontWeight: 600 },
+  detailValue: { fontSize: 13, color: '#10281F', textAlign: 'right', maxWidth: '60%' },
+  dropdownMenu: {
+    position: 'absolute', right: 0, top: '100%', zIndex: 50,
+    background: '#fff', border: '1px solid #E6D8C6', borderRadius: 8,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 150, padding: 4,
+    marginTop: 4,
+  } as React.CSSProperties,
+  dropdownItem: {
+    display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 14px',
+    border: 'none', background: 'transparent', textAlign: 'left',
+    fontSize: 12, fontWeight: 600, color: '#333', borderRadius: 5,
+    cursor: 'pointer',
+  } as React.CSSProperties,
 };

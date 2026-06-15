@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   AlertCircle, ArrowDown, ArrowUp, Box, ChevronDown, ChevronLeft, ChevronRight,
   Download, MoreVertical, Package, Plus, Search, Tags, Scissors, Droplets,
@@ -58,9 +58,60 @@ export default function ProductsPage() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
+  const [isDistribusiModalOpen, setIsDistribusiModalOpen] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState<Partial<ProductRow>>({});
+
+  // Dropdown menu state
+  const [menuOpenSku, setMenuOpenSku] = useState<string | null>(null);
+
+  // Click outside -> tutup dropdown
+  useEffect(() => {
+    if (!menuOpenSku) return;
+    const close = () => setMenuOpenSku(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [menuOpenSku]);
+
+  const handleEdit = (product: ProductRow) => {
+    setMenuOpenSku(null);
+    handleOpenModal(product);
+  };
+
+  const handleDuplicate = (product: ProductRow) => {
+    setMenuOpenSku(null);
+    const newSku = product.sku.replace(/\d+/, m => String(Number(m) + 100));
+    const dup: ProductRow = { ...product, sku: newSku, name: product.name + ' (Copy)' };
+    setProducts(prev => [dup, ...prev]);
+  };
+
+  const handleDelete = (sku: string) => {
+    setMenuOpenSku(null);
+    if (window.confirm('Yakin ingin menghapus produk ini?')) {
+      setProducts(prev => prev.filter(p => p.sku !== sku));
+    }
+  };
+
+  const [dropdownHover, setDropdownHover] = useState<string | null>(null);
+
+  // Export CSV
+  const handleExport = () => {
+    const headers = ['SKU', 'Nama Produk', 'Kategori', 'Harga Jual', 'Stok', 'Min. Stok', 'Status'];
+    const rows = filteredProducts.map(p => [
+      p.sku, p.name, p.category, p.price, p.stock, p.minStock, p.status,
+    ]);
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `produk-stok-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleOpenModal = (product?: ProductRow) => {
     if (product) {
@@ -137,6 +188,36 @@ export default function ProductsPage() {
   const totalNilai = products.reduce((acc, p) => acc + (p.price * p.stock), 0);
   const stokMenipisList = products.filter(p => p.status === 'Rendah' || p.status === 'Kritis');
 
+  // Sidebar Action Handlers
+  const handleCategorySeeAll = () => {
+    setCatFilter('Semua');
+    setActiveTab('Semua Produk');
+    setPage(1);
+  };
+
+  const handleLowStockSeeAll = () => {
+    setActiveTab('Stok Menipis');
+    setCatFilter('Semua');
+    setStatusFilter('Semua');
+    setPage(1);
+  };
+
+  // Distribusi data untuk modal
+  const distribusiData = useMemo(() => {
+    const catMap = new Map<string, number>();
+    products.forEach(p => {
+      catMap.set(p.category, (catMap.get(p.category) || 0) + p.stock);
+    });
+    const total = Array.from(catMap.values()).reduce((a, b) => a + b, 0);
+    const colors = ['#0F3F31', '#C75B3A', '#C9A84C', '#BDAE93', '#D8D0C2'];
+    return Array.from(catMap.entries()).map(([name, value], i) => ({
+      name,
+      value,
+      pct: total > 0 ? Math.round((value / total) * 100) : 0,
+      color: colors[i % colors.length],
+    })).sort((a, b) => b.value - a.value);
+  }, [products]);
+
   return (
     <div style={styles.page}>
       <div style={styles.headerRow}>
@@ -183,7 +264,7 @@ export default function ProductsPage() {
               <SelectFilter label="Kategori" value={catFilter} options={CATEGORY_LIST} onChange={v => { setCatFilter(v); setPage(1); }} />
               <SelectFilter label="Status" value={statusFilter} options={STATUS_LIST} onChange={v => { setStatusFilter(v); setPage(1); }} />
               <SelectFilter label="Urutkan" value={sortOrder} options={SORT_OPTIONS} onChange={v => { setSortOrder(v); setPage(1); }} />
-              <button style={styles.exportButton}><Download size={15} /> Export</button>
+              <button onClick={handleExport} style={styles.exportButton}><Download size={15} /> Export</button>
             </div>
           </section>
 
@@ -207,7 +288,42 @@ export default function ProductsPage() {
                       <td style={styles.tdCenter}>{product.updatedAt}</td>
                       <td style={styles.actionCell}>
                         <button onClick={() => handleOpenModal(product)} style={styles.editBtn}>Edit</button>
-                        <button style={styles.moreBtn}><MoreVertical size={15} /></button>
+                        <div style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setMenuOpenSku(menuOpenSku === product.sku ? null : product.sku); }}
+                            style={styles.moreBtn}
+                          >
+                            <MoreVertical size={15} />
+                          </button>
+                          {menuOpenSku === product.sku && (
+                            <div style={styles.dropdownMenu}>
+                              <button
+                                style={{ ...styles.dropdownItem, background: dropdownHover === 'edit' ? '#F5F0E8' : 'transparent' }}
+                                onMouseEnter={() => setDropdownHover('edit')}
+                                onMouseLeave={() => setDropdownHover(null)}
+                                onClick={() => handleEdit(product)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                style={{ ...styles.dropdownItem, background: dropdownHover === 'duplicate' ? '#F5F0E8' : 'transparent' }}
+                                onMouseEnter={() => setDropdownHover('duplicate')}
+                                onMouseLeave={() => setDropdownHover(null)}
+                                onClick={() => handleDuplicate(product)}
+                              >
+                                Duplikat
+                              </button>
+                              <button
+                                style={{ ...styles.dropdownItem, background: dropdownHover === 'delete' ? '#F5F0E8' : 'transparent' }}
+                                onMouseEnter={() => setDropdownHover('delete')}
+                                onMouseLeave={() => setDropdownHover(null)}
+                                onClick={() => handleDelete(product.sku)}
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -236,7 +352,7 @@ export default function ProductsPage() {
         </main>
 
         <aside style={styles.sideColumn}>
-          <InfoCard title="Kategori Produk" action="Lihat Semua">
+          <InfoCard title="Kategori Produk" action="Lihat Semua" onAction={handleCategorySeeAll}>
             {[
               { name: 'Pomade', count: products.filter(p => p.category === 'Pomade').length, icon: <Package size={14} color="#B98534" /> },
               { name: 'Styling', count: products.filter(p => p.category === 'Styling').length, icon: <Scissors size={14} color="#B98534" /> },
@@ -253,7 +369,7 @@ export default function ProductsPage() {
             ))}
           </InfoCard>
 
-          <InfoCard title="Stok Menipis" action="Lihat Semua">
+          <InfoCard title="Stok Menipis" action="Lihat Semua" onAction={handleLowStockSeeAll}>
             {stokMenipisList.slice(0, 4).map((item) => (
               <div key={item.sku} style={styles.lowStockRow}>
                 <span style={styles.productMini}>{item.icon}</span>
@@ -270,7 +386,7 @@ export default function ProductsPage() {
             <Movement icon={<Tags size={15} />} color="#B98534" label="Penyesuaian" value="2 unit" />
           </InfoCard>
 
-          <InfoCard title="Distribusi Stok per Kategori" action="Lihat Detail">
+          <InfoCard title="Distribusi Stok per Kategori" action="Lihat Detail" onAction={() => setIsDistribusiModalOpen(true)}>
             <div style={styles.distributionBox}>
               <div style={styles.donut}><strong>{totalStok}</strong><span>Total Unit</span></div>
               <div style={styles.legendList}>
@@ -339,6 +455,46 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
+      {/* Modal Detail Distribusi Stok */}
+      {isDistribusiModalOpen && (
+        <div style={styles.modalOverlay}>
+          <div style={{ ...styles.modalCard, maxWidth: 460 }}>
+            <div style={styles.modalHeader}>
+              <div>
+                <h2 style={styles.modalTitle}>Distribusi Stok per Kategori</h2>
+                <p style={styles.modalSubtitle}>Total {distribusiData.reduce((a, b) => a + b.value, 0)} unit stok</p>
+              </div>
+              <button onClick={() => setIsDistribusiModalOpen(false)} style={styles.modalClose}><X size={18} /></button>
+            </div>
+            <div style={{ display: 'flex', gap: 24, alignItems: 'center', padding: '12px 0' }}>
+              <div style={{
+                width: 140, height: 140, borderRadius: '50%', flexShrink: 0,
+                background: `radial-gradient(circle at center, #fff 0 62%, transparent 63%), conic-gradient(${
+                  distribusiData.map((d, i) => {
+                    const start = distribusiData.slice(0, i).reduce((a, b) => a + b.pct, 0);
+                    return `${d.color} ${start}% ${start + d.pct}%`;
+                  }).join(', ')
+                })`,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <strong style={{ fontSize: 22, color: '#10281F' }}>{distribusiData.length}</strong>
+                <span style={{ fontSize: 10, color: '#6E6A64' }}>Kategori</span>
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {distribusiData.map(d => (
+                  <div key={d.name} style={{ display: 'grid', gridTemplateColumns: '12px 1fr auto auto', gap: 8, alignItems: 'center', fontSize: 12 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: d.color }} />
+                    <span style={{ fontWeight: 600, color: '#333' }}>{d.name}</span>
+                    <span style={{ color: '#6E6A64' }}>{d.value} unit</span>
+                    <b style={{ color: '#10281F' }}>{d.pct}%</b>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -365,8 +521,8 @@ function StatusPill({ status, small }: { status: ProductStatus; small?: boolean 
   return <span style={{ ...styles.statusPill, ...style, ...(small ? styles.statusSmall : {}) }}>{status}</span>;
 }
 
-function InfoCard({ title, action, children }: { title: string; action?: string; children: React.ReactNode }) {
-  return <section style={styles.infoCard}><div style={styles.infoHeader}><h2 style={styles.infoTitle}>{title}</h2>{action && <button style={styles.infoAction}>{action}</button>}</div>{children}</section>;
+function InfoCard({ title, action, onAction, children }: { title: string; action?: string; onAction?: () => void; children: React.ReactNode }) {
+  return <section style={styles.infoCard}><div style={styles.infoHeader}><h2 style={styles.infoTitle}>{title}</h2>{action && <button onClick={onAction} style={styles.infoAction}>{action}</button>}</div>{children}</section>;
 }
 
 function Movement({ icon, color, label, value }: { icon: React.ReactNode; color: string; label: string; value: string }) {
@@ -459,4 +615,18 @@ const styles: Record<string, React.CSSProperties> = {
   modalActions: { display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24, paddingTop: 16, borderTop: '1px solid #F0E6D8' },
   modalCancel: { height: 42, padding: '0 18px', borderRadius: 8, border: '1px solid #E7DCCB', color: '#555', background: '#fff', fontWeight: 800, cursor: 'pointer' },
   modalSave: { height: 42, padding: '0 20px', borderRadius: 8, border: 'none', color: '#fff', background: '#0F3F31', fontWeight: 800, cursor: 'pointer' },
+
+  // Dropdown styles
+  dropdownMenu: {
+    position: 'absolute', right: 0, top: '100%', zIndex: 50,
+    background: '#fff', border: '1px solid #E6D8C6', borderRadius: 8,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 140, padding: 4,
+    marginTop: 4,
+  } as React.CSSProperties,
+  dropdownItem: {
+    display: 'block', width: '100%', padding: '8px 14px',
+    border: 'none', background: 'transparent', textAlign: 'left',
+    fontSize: 12, fontWeight: 600, color: '#333', borderRadius: 5,
+    cursor: 'pointer',
+  } as React.CSSProperties,
 };

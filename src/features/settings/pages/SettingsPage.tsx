@@ -409,12 +409,6 @@ export default function SettingsPage() {
           <p>Konten pengaturan untuk tab ini disiapkan sebagai placeholder pada tahap frontend awal.</p>
         </section>
       )}
-
-      <footer style={styles.footer}>
-        <span style={styles.footerOrnament} />
-        <span>Suma Barbershop POS &bull; Pengaturan</span>
-        <span style={styles.footerOrnament} />
-      </footer>
     </div>
   );
 }
