@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ArrowUpDown,
   Calendar,
@@ -62,12 +63,24 @@ export default function TransactionHistoryPage() {
   const [endDate, setEndDate] = useState(fmt(today));
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const datePickerRef = React.useRef<HTMLDivElement>(null);
+  const dateBtnRef = React.useRef<HTMLButtonElement>(null);
+  const [dpPos, setDpPos] = useState({ top: 0, left: 0 });
+
+  // Buka datepicker + hitung posisi
+  const openDatePicker = () => {
+    if (dateBtnRef.current) {
+      const rect = dateBtnRef.current.getBoundingClientRect();
+      setDpPos({ top: rect.bottom + 6, left: Math.max(8, rect.right - 230) });
+    }
+    setIsDatePickerOpen(true);
+  };
 
   // Click outside -> tutup datepicker
   useEffect(() => {
     if (!isDatePickerOpen) return;
     const handleClick = (e: MouseEvent) => {
-      if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
+      if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node) &&
+          dateBtnRef.current && !dateBtnRef.current.contains(e.target as Node)) {
         setIsDatePickerOpen(false);
       }
     };
@@ -185,17 +198,18 @@ export default function TransactionHistoryPage() {
           <FilterSelect value={paymentFilter} onChange={setPaymentFilter} options={PAYMENT_FILTERS} />
           <FilterSelect value={typeFilter} onChange={setTypeFilter} options={TYPE_FILTERS} />
           <FilterSelect value={cashierFilter} onChange={setCashierFilter} options={CASHIER_FILTERS} />
-          <div ref={datePickerRef} style={{ position: 'relative', flexShrink: 0 }}>
-            <button onClick={() => setIsDatePickerOpen(!isDatePickerOpen)} style={styles.dateBtn}>
+          <div style={{ flexShrink: 0 }}>
+            <button ref={dateBtnRef} onClick={openDatePicker} style={styles.dateBtn}>
               <Calendar size={15} color="#C75B3A" /> {fmtDisplay(new Date(startDate + 'T00:00:00'))} - {fmtDisplay(new Date(endDate + 'T00:00:00'))}
             </button>
-            {isDatePickerOpen && (
-              <div style={styles.datePickerDropdown}>
+            {isDatePickerOpen && createPortal(
+              <div ref={datePickerRef} style={{ ...styles.datePickerDropdown, position: 'fixed', top: dpPos.top, left: dpPos.left, zIndex: 999 }}>
                 <label style={styles.datePickerLabel}>Dari Tanggal</label>
                 <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setPage(1); }} style={styles.datePickerInput} />
                 <label style={{ ...styles.datePickerLabel, marginTop: 8 }}>Sampai Tanggal</label>
                 <input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setPage(1); }} style={styles.datePickerInput} />
-              </div>
+              </div>,
+              document.body
             )}
           </div>
           <div style={styles.sortWrap}>
@@ -571,7 +585,6 @@ const styles: Record<string, React.CSSProperties> = {
 
   // Date picker
   datePickerDropdown: {
-    position: 'absolute', top: '100%', right: 0, zIndex: 50, marginTop: 6,
     background: '#fff', border: '1px solid #E6D8C6', borderRadius: 10,
     boxShadow: '0 12px 40px rgba(15,31,24,0.18)', padding: 16, minWidth: 220,
   } as React.CSSProperties,
