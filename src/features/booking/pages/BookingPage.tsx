@@ -290,7 +290,7 @@ const styles: Record<string, React.CSSProperties> = {
   sectionTitle: { margin: 0, fontFamily: 'var(--font-heading)', fontSize: 18, color: '#10281F' },
   sectionCaption: { margin: '4px 0 0', color: '#81786F', fontSize: 12, lineHeight: 1.45 },
   priceImageWrap: { borderRadius: 12, border: '1px solid #E6D8C6', overflow: 'hidden', background: '#0F3F31', marginBottom: 12 },
-  priceImage: { width: '100%', height: 'auto', objectFit: 'contain', display: 'block', aspectRatio: '3/4' },
+  priceImage: { width: '100%', height: 'auto', display: 'block' },
   serviceGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 },
   serviceCard: { minHeight: 146, border: '1px solid #E6D8C6', borderRadius: 12, background: '#FFFDF9', padding: 13, color: '#10281F', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 6 },
   serviceCardActive: { borderColor: '#0F3F31', boxShadow: '0 0 0 2px rgba(15,63,49,0.12)', background: '#F9F6EF' },
