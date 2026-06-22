@@ -8,11 +8,14 @@ import TransactionHistoryPage from '../features/history/pages/TransactionHistory
 import LoginPage from '../features/auth/pages/LoginPage';
 import ProfilePage from '../features/profile/pages/ProfilePage';
 import SettingsPage from '../features/settings/pages/SettingsPage';
+import BookingPage from '../features/booking/pages/BookingPage';
+import ProtectedRoute from '../features/auth/components/ProtectedRoute';
+import PublicOnlyRoute from '../features/auth/components/PublicOnlyRoute';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <MainLayout />,
+    element: <ProtectedRoute><MainLayout /></ProtectedRoute>,
     children: [
       {
         index: true,
@@ -45,7 +48,11 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: '/booking',
+    element: <BookingPage />,
+  },
+  {
     path: '/login',
-    element: <LoginPage />,
+    element: <PublicOnlyRoute><LoginPage /></PublicOnlyRoute>,
   }
 ]);

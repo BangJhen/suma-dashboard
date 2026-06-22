@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, ChevronDown, Home, LogOut, PanelLeftClose, PanelLeftOpen, User, X } from 'lucide-react';
+import { useAuth } from '../features/auth/state/AuthContext';
 
 const BRANCHES = [
   'Suma Barbershop - Cabang Utama',
@@ -16,6 +17,7 @@ interface TopbarProps {
 
 export default function Topbar({ isSidebarOpen, onToggleSidebar }: TopbarProps) {
   const navigate = useNavigate();
+  const { logout, user } = useAuth();
   const [branch, setBranch] = useState(BRANCHES[0]);
   const [openMenu, setOpenMenu] = useState<'branch' | 'owner' | null>(null);
   const [pendingBranch, setPendingBranch] = useState<string | null>(null);
@@ -28,7 +30,14 @@ export default function Topbar({ isSidebarOpen, onToggleSidebar }: TopbarProps) 
 
   const handleConfirmBranch = () => {
     setPendingBranch(null);
+    logout();
     navigate('/login');
+  };
+
+  const handleLogout = () => {
+    setOpenMenu(null);
+    logout();
+    navigate('/login', { replace: true });
   };
 
   const handleCancelBranch = () => {
@@ -78,10 +87,10 @@ export default function Topbar({ isSidebarOpen, onToggleSidebar }: TopbarProps) 
         <div style={styles.dropdownWrap}>
           <button type="button" onClick={() => toggleMenu('owner')} style={styles.selector}>
             <div style={styles.avatar}>S</div>
-            <div style={styles.selectorText}>
-              <div style={styles.selectorLabel}>Owner</div>
-              <div style={styles.selectorValue}>owner@suma.com</div>
-            </div>
+              <div style={styles.selectorText}>
+                <div style={styles.selectorLabel}>Owner</div>
+              <div style={styles.selectorValue}>{user?.email ?? 'admin@suma.test'}</div>
+              </div>
             <ChevronDown size={14} color="#888" style={{ transform: openMenu === 'owner' ? 'rotate(180deg)' : 'none' }} />
           </button>
 
@@ -90,12 +99,12 @@ export default function Topbar({ isSidebarOpen, onToggleSidebar }: TopbarProps) 
               <div style={styles.ownerInfo}>
                 <div style={styles.avatarLarge}>S</div>
                 <div>
-                  <strong style={{ fontSize: 13 }}>Owner</strong>
-                  <div style={{ fontSize: 11, color: '#888' }}>owner@suma.com</div>
+                  <strong style={{ fontSize: 13 }}>{user?.name ?? 'Owner'}</strong>
+                  <div style={{ fontSize: 11, color: '#888' }}>{user?.email ?? 'admin@suma.test'}</div>
                 </div>
               </div>
               <button type="button" onClick={() => { setOpenMenu(null); navigate('/profile'); }} style={styles.dropdownItem}><User size={14} /> Profile</button>
-              <button type="button" onClick={() => { setOpenMenu(null); navigate('/login'); }} style={{ ...styles.dropdownItem, color: '#C75B3A' }}><LogOut size={14} /> Logout</button>
+              <button type="button" onClick={handleLogout} style={{ ...styles.dropdownItem, color: '#C75B3A' }}><LogOut size={14} /> Logout</button>
             </div>
           )}
         </div>
