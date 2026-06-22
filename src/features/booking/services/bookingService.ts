@@ -76,6 +76,78 @@ export const BOOKING_SLOTS: BookingSlot[] = [
   { time: '20:00', status: 'available' },
 ];
 
+// ─── Per-Barber Booking Data ─────────────────────────────────────────────────
+// Each barber has individual bookings. A slot is only "booked" for a specific
+// barber when that barber personally has an appointment at that time.
+
+export interface BarberBookedSlot {
+  barberId: string;
+  date: string;
+  time: string;
+}
+
+export const BARBER_BOOKINGS: BarberBookedSlot[] = [
+  // Raka – 4 booked slots
+  { barberId: 'raka', date: '2026-06-16', time: '10:00' },
+  { barberId: 'raka', date: '2026-06-16', time: '11:30' },
+  { barberId: 'raka', date: '2026-06-16', time: '14:00' },
+  { barberId: 'raka', date: '2026-06-16', time: '17:00' },
+  // Dimas – 4 booked slots
+  { barberId: 'dimas', date: '2026-06-16', time: '10:30' },
+  { barberId: 'dimas', date: '2026-06-16', time: '11:00' },
+  { barberId: 'dimas', date: '2026-06-16', time: '13:00' },
+  { barberId: 'dimas', date: '2026-06-16', time: '19:00' },
+  // Bayu – 4 booked slots
+  { barberId: 'bayu', date: '2026-06-16', time: '10:00' },
+  { barberId: 'bayu', date: '2026-06-16', time: '13:30' },
+  { barberId: 'bayu', date: '2026-06-16', time: '15:00' },
+  { barberId: 'bayu', date: '2026-06-16', time: '20:00' },
+];
+
+/**
+ * Returns time slots filtered by a specific barber's individual availability.
+ *
+ * - Specific barber: only slots where that barber is NOT booked are returned.
+ *   Slots already booked by other barbers are excluded entirely.
+ * - "auto" (Bebas Barber): returns slots where at least one active barber
+ *   is still available. The slot status reflects the worst-case base status.
+ */
+export function getSlotsForBarber(
+  barberId: string,
+  date: string = '2026-06-16',
+  slots: BookingSlot[] = BOOKING_SLOTS,
+): BookingSlot[] {
+  const activeBarberIds = BARBER_OPTIONS
+    .filter((barber) => barber.available)
+    .map((barber) => barber.id);
+
+  if (barberId === 'auto') {
+    // For auto: show slot if at least one active barber is free at that time
+    return slots.filter((slot) => {
+      if (slot.status === 'booked') return false;
+      const bookedBarberIds = BARBER_BOOKINGS
+        .filter((b) => b.date === date && b.time === slot.time)
+        .map((b) => b.barberId);
+      return activeBarberIds.some((id) => !bookedBarberIds.includes(id));
+    });
+  }
+
+  // For a specific barber: only return slots where THIS barber is not booked
+  const barber = BARBER_OPTIONS.find((b) => b.id === barberId);
+  if (!barber || !barber.available) return [];
+
+  const ownBookedTimes = new Set(
+    BARBER_BOOKINGS
+      .filter((b) => b.barberId === barberId && b.date === date)
+      .map((b) => b.time),
+  );
+
+  return slots.filter((slot) => {
+    if (ownBookedTimes.has(slot.time)) return false;
+    return true;
+  });
+}
+
 export function formatBookingPrice(price: number) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -96,11 +168,14 @@ export function getAvailableSlots(slots: BookingSlot[] = BOOKING_SLOTS) {
 export function createBooking(input: BookingInput, createdAt = new Date()): BookingRecord {
   const service = BOOKING_SERVICES.find((item) => item.id === input.serviceId);
   const barber = BARBER_OPTIONS.find((item) => item.id === input.barberId);
-  const slot = BOOKING_SLOTS.find((item) => item.time === input.time);
-
   if (!service) throw new Error('Layanan booking tidak ditemukan.');
   if (!barber || !barber.available) throw new Error('Barber tidak tersedia untuk booking.');
-  if (!slot || slot.status === 'booked') throw new Error('Slot waktu tidak tersedia.');
+
+  // Validate slot availability for the specific barber
+  const availableSlots = getSlotsForBarber(input.barberId, input.date);
+  const isSlotAvailable = availableSlots.some((s) => s.time === input.time);
+  if (!isSlotAvailable) throw new Error('Slot waktu tidak tersedia untuk barber yang dipilih.');
+
   if (!input.customerName.trim()) throw new Error('Nama pelanggan wajib diisi.');
   if (!isReasonableWhatsappNumber(input.phone)) throw new Error('Nomor WhatsApp tidak valid.');
 

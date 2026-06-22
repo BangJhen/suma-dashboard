@@ -3,7 +3,7 @@
 export type PaymentMethod = 'Cash' | 'QRIS' | 'Debit/Credit' | 'Transfer';
 export type TransactionStatus = 'Open' | 'Paid' | 'Cancelled';
 export type Period = 'Hari Ini' | 'Minggu Ini' | 'Bulan Ini';
-export type NavPage = 'Dashboard' | 'POS / Transaksi' | 'Produk & Stok' | 'Riwayat Transaksi' | 'Report' | 'Pengaturan';
+export type NavPage = 'Dashboard' | 'POS / Transaksi' | 'Produk & Stok' | 'Riwayat Transaksi' | 'Report' | 'Staff Barber' | 'Pengaturan';
 
 export interface Transaction {
   id: string;

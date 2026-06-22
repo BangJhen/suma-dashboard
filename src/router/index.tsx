@@ -9,6 +9,7 @@ import LoginPage from '../features/auth/pages/LoginPage';
 import ProfilePage from '../features/profile/pages/ProfilePage';
 import SettingsPage from '../features/settings/pages/SettingsPage';
 import BookingPage from '../features/booking/pages/BookingPage';
+import BarberStaffPage from '../features/staff/pages/BarberStaffPage';
 import ProtectedRoute from '../features/auth/components/ProtectedRoute';
 import PublicOnlyRoute from '../features/auth/components/PublicOnlyRoute';
 
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
       {
         path: 'reports',
         element: <ReportPage />,
+      },
+      {
+        path: 'staff',
+        element: <BarberStaffPage />,
       },
       {
         path: 'settings',

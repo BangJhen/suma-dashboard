@@ -15,6 +15,7 @@ export default function MainLayout() {
   else if (location.pathname.startsWith('/products')) activePage = 'Produk & Stok';
   else if (location.pathname.startsWith('/history')) activePage = 'Riwayat Transaksi';
   else if (location.pathname.startsWith('/reports')) activePage = 'Report';
+  else if (location.pathname.startsWith('/staff')) activePage = 'Staff Barber';
   else if (location.pathname.startsWith('/settings')) activePage = 'Pengaturan';
 
   const handleNavigate = (page: NavPage) => {
@@ -24,6 +25,7 @@ export default function MainLayout() {
       case 'Produk & Stok': navigate('/products'); break;
       case 'Riwayat Transaksi': navigate('/history'); break;
       case 'Report': navigate('/reports'); break;
+      case 'Staff Barber': navigate('/staff'); break;
       case 'Pengaturan': navigate('/settings'); break;
     }
   };

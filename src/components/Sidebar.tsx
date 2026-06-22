@@ -7,6 +7,7 @@ import {
   BarChart2,
   Settings,
   Clock,
+  UserCog,
 } from 'lucide-react';
 import { useServerClock } from '../hooks/useServerClock';
 import type { NavPage } from '../data/types';
@@ -23,6 +24,7 @@ const NAV_ITEMS: { label: NavPage; icon: React.ReactNode }[] = [
   { label: 'Produk & Stok', icon: <Package size={18} /> },
   { label: 'Riwayat Transaksi', icon: <Receipt size={18} /> },
   { label: 'Report', icon: <BarChart2 size={18} /> },
+  { label: 'Staff Barber', icon: <UserCog size={18} /> },
   { label: 'Pengaturan', icon: <Settings size={18} /> },
 ];
 

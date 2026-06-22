@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   CalendarDays,
   CheckCircle2,
@@ -14,10 +14,9 @@ import {
   BARBER_OPTIONS,
   BOOKING_BRANCH,
   BOOKING_SERVICES,
-  BOOKING_SLOTS,
   createBooking,
   formatBookingPrice,
-  getAvailableSlots,
+  getSlotsForBarber,
   isReasonableWhatsappNumber,
   type BookingRecord,
 } from '../services/bookingService';
@@ -33,13 +32,25 @@ const DATE_OPTIONS = [
 export default function BookingPage() {
   const [selectedServiceId, setSelectedServiceId] = useState(BOOKING_SERVICES[0].id);
   const [selectedDate, setSelectedDate] = useState(DATE_OPTIONS[0].value);
-  const [selectedTime, setSelectedTime] = useState(getAvailableSlots()[0]?.time ?? '');
+  const [selectedTime, setSelectedTime] = useState('');
   const [selectedBarberId, setSelectedBarberId] = useState('auto');
   const [customerName, setCustomerName] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [successBooking, setSuccessBooking] = useState<BookingRecord | null>(null);
+
+  // Time slots available for the currently selected barber on the selected date
+  const availableSlots = useMemo(
+    () => getSlotsForBarber(selectedBarberId, selectedDate),
+    [selectedBarberId, selectedDate],
+  );
+
+  // Reset selected time whenever barber or date changes
+  useEffect(() => {
+    const firstSlot = availableSlots[0];
+    setSelectedTime(firstSlot ? firstSlot.time : '');
+  }, [selectedBarberId, selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedService = useMemo(
     () => BOOKING_SERVICES.find((service) => service.id === selectedServiceId) ?? BOOKING_SERVICES[0],
@@ -155,44 +166,7 @@ export default function BookingPage() {
           </section>
 
           <section style={styles.card}>
-            <SectionHeader icon={<CalendarDays size={18} />} title="Pilih Jadwal" caption="Slot dummy tersedia untuk simulasi booking MVP." />
-            <div style={styles.dateGrid}>
-              {DATE_OPTIONS.map((date) => (
-                <button
-                  key={date.value}
-                  onClick={() => setSelectedDate(date.value)}
-                  style={{ ...styles.dateButton, ...(selectedDate === date.value ? styles.dateButtonActive : {}) }}
-                >
-                  <strong>{date.label}</strong>
-                  <span>{date.day}</span>
-                </button>
-              ))}
-            </div>
-            <div style={styles.slotGrid}>
-              {BOOKING_SLOTS.map((slot) => {
-                const isBooked = slot.status === 'booked';
-                const isSelected = selectedTime === slot.time;
-                return (
-                  <button
-                    key={slot.time}
-                    disabled={isBooked}
-                    onClick={() => setSelectedTime(slot.time)}
-                    style={{
-                      ...styles.slotButton,
-                      ...(isSelected ? styles.slotButtonActive : {}),
-                      ...(isBooked ? styles.slotButtonDisabled : {}),
-                    }}
-                  >
-                    <strong>{slot.time}</strong>
-                    <span>{slot.status === 'available' ? 'Tersedia' : slot.status === 'limited' ? 'Terbatas' : 'Penuh'}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section style={styles.card}>
-            <SectionHeader icon={<UserRound size={18} />} title="Pilih Barber" caption="Pilih nama barber atau gunakan opsi bebas barber." />
+            <SectionHeader icon={<UserRound size={18} />} title="Pilih Barber" caption="Pilih nama barber atau gunakan opsi bebas barber. Jadwal akan menyesuaikan ketersediaan barber." />
             <div style={styles.barberGrid}>
               {BARBER_OPTIONS.map((barber) => (
                 <button
@@ -211,6 +185,46 @@ export default function BookingPage() {
                 </button>
               ))}
             </div>
+          </section>
+
+          <section style={styles.card}>
+            <SectionHeader icon={<CalendarDays size={18} />} title="Pilih Jadwal" caption={`Slot tersedia untuk ${selectedBarber.name}${selectedBarberId === 'auto' ? ' (semua barber aktif)' : ''}.`} />
+            <div style={styles.dateGrid}>
+              {DATE_OPTIONS.map((date) => (
+                <button
+                  key={date.value}
+                  onClick={() => setSelectedDate(date.value)}
+                  style={{ ...styles.dateButton, ...(selectedDate === date.value ? styles.dateButtonActive : {}) }}
+                >
+                  <strong>{date.label}</strong>
+                  <span>{date.day}</span>
+                </button>
+              ))}
+            </div>
+            {availableSlots.length > 0 ? (
+              <div style={styles.slotGrid}>
+                {availableSlots.map((slot) => {
+                  const isSelected = selectedTime === slot.time;
+                  return (
+                    <button
+                      key={slot.time}
+                      onClick={() => setSelectedTime(slot.time)}
+                      style={{
+                        ...styles.slotButton,
+                        ...(isSelected ? styles.slotButtonActive : {}),
+                      }}
+                    >
+                      <strong>{slot.time}</strong>
+                      <span>Tersedia</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={styles.slotEmpty}>
+                <p>Tidak ada slot tersedia untuk barber ini pada tanggal yang dipilih.</p>
+              </div>
+            )}
           </section>
         </section>
 
@@ -305,6 +319,7 @@ const styles: Record<string, React.CSSProperties> = {
   slotButton: { minHeight: 54, borderRadius: 10, border: '1px solid #E6D8C6', background: '#FFFDF9', color: '#10281F', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, outline: 'none', WebkitTapHighlightColor: 'transparent' },
   slotButtonActive: { background: '#0F3F31', color: '#fff', borderColor: '#0F3F31' },
   slotButtonDisabled: { opacity: 0.42, cursor: 'not-allowed', textDecoration: 'line-through' },
+  slotEmpty: { padding: '20px 14px', textAlign: 'center', color: '#81786F', fontSize: 13, background: '#FFFDF9', border: '1px dashed #E6D8C6', borderRadius: 10, lineHeight: 1.6 },
   barberGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: 9 },
   barberCard: { minHeight: 112, borderRadius: 12, border: '1px solid #E6D8C6', background: '#FFFDF9', color: '#10281F', padding: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, textAlign: 'center', outline: 'none', WebkitTapHighlightColor: 'transparent' },
   barberCardActive: { background: '#0F3F31', color: '#fff', borderColor: '#0F3F31' },
